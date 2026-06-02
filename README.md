@@ -5,3 +5,8 @@ My Programming work for my Bachelor thesis about Eyetracking
 # Main Features
 
 # Repository Structure
+| Processing | Processing frontend - draws and maneges the eye movement |
+|------------|----------------------------------------------------------|
+|            |                                                          |
+|            |                                                          |
+|            |                                                          |
