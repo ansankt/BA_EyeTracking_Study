@@ -13,13 +13,14 @@ float ellipseRadiusX = 250 / 2;
 float ellipseRadiusY = 400 / 2;
 
 
-float movementspeed = 2.0;
+float movementspeed = 3.0;
 
 float target_x; //fürs rechte Auge links wird dementsprechend angepasst
 float target_y;
 
 boolean waiting = false;
 int waitUntil = 0;
+int waiting_time=0;
 
 
 
@@ -71,6 +72,8 @@ void moveEye(){
 
         //TODO: neues Ziel setzen
         rnd_new_target();
+        rnd_newWaitTime();
+        rnd_movementSpeed();
     }
   } else {
   
@@ -86,10 +89,11 @@ if(distance < movementspeed){
     eye_y = target_y;
 
     eye_x_right = eye_x_left + eye_distance;
-    print("waiting...");
+    println("waiting... for " + waiting_time + "ms");
+    print("movementspeed: "+movementspeed);
 
     waiting = true;
-    waitUntil = millis() + 2000;
+    waitUntil = millis() + waiting_time;
     return;
     
 
@@ -129,9 +133,24 @@ void rnd_new_target(){
   
 }
 
+void rnd_newWaitTime(){
+  waiting_time = (int) random(1000,5000);
+
+}
+
+void rnd_movementSpeed (){
+movementspeed = random(1.5,6);
+}
+
 
 void draw_circle(float xpos, float ypos){
 
   circle(xpos,ypos, circleradius);
   
 }
+
+
+
+
+
+//TODO: States der Augen, wenn die Mittelpunkte innerhalb eines Kreisesliegen über distance to midpoint > r, dann isses gaze wenn Mensch drauf schaut dann mutual gaze
