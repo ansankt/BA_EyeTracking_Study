@@ -1,4 +1,4 @@
-int background = 255;
+/* int background = 255;
 int circleradius = 75;
 float eye_y = 400;
 int eye_distance = 300;
@@ -118,7 +118,7 @@ void rnd_new_target(){
   
   
   /* target_x = (int) random(125+circleradius/2, 375 - circleradius/2);
-  target_y = (int) random(200+circleradius/2, 600 - circleradius/2); */
+  target_y = (int) random(200+circleradius/2, 600 - circleradius/2); * /
   
   float centerX = 250;
   float centerY = 400;
@@ -148,6 +148,7 @@ void draw_circle(float xpos, float ypos){
   circle(xpos,ypos, circleradius);
   
 }
+*/
 
 
 
