@@ -41,6 +41,14 @@ class EyeRenderer {
     return pupilDiameter;
   }
 
+  float getEyeWidth() {
+    return eyeWidth;
+  }
+
+  float getEyeHeight() {
+    return eyeHeight;
+  }
+
   PVector getLeftEyeCenter() {
     return leftEyeCenter.copy();
   }

@@ -7,8 +7,12 @@ class EyeAgent {
 
   float movementSpeed = 3.0;
   float eyeDistance = 300;
+  float targetRadiusX;
+  float targetRadiusY;
+  PVector leftEyeCenter;
+  PVector rightEyeCenter;
 
-  EyeAgent(PVector leftStart, PVector rightStart) {
+  EyeAgent(PVector leftStart, PVector rightStart, float eyeWidth, float eyeHeight, float pupilDiameter) {
     leftPupil = leftStart.copy();
     rightPupil = rightStart.copy();
 
@@ -16,6 +20,10 @@ class EyeAgent {
     rightTarget = rightStart.copy();
 
     eyeDistance = rightStart.x - leftStart.x;
+    targetRadiusX = eyeWidth / 2 - pupilDiameter / 2;
+    targetRadiusY = eyeHeight / 2 - pupilDiameter / 2;
+    leftEyeCenter = leftStart.copy();
+    rightEyeCenter = rightStart.copy();
   }
 
   void update() {
@@ -24,13 +32,13 @@ class EyeAgent {
   }
 
   void setSharedTargetFromLeftEye(PVector newLeftTarget) {
-    leftTarget = newLeftTarget.copy();
-    rightTarget = new PVector(newLeftTarget.x + eyeDistance, newLeftTarget.y);
+    leftTarget = constrainTargetToEye(newLeftTarget, leftEyeCenter);
+    rightTarget = new PVector(leftTarget.x + eyeDistance, leftTarget.y);
   }
 
   void setTargets(PVector newLeftTarget, PVector newRightTarget) {
-    leftTarget = newLeftTarget.copy();
-    rightTarget = newRightTarget.copy();
+    leftTarget = constrainTargetToEye(newLeftTarget, leftEyeCenter);
+    rightTarget = constrainTargetToEye(newRightTarget, rightEyeCenter);
   }
 
   void setMovementSpeed(float newMovementSpeed) {
@@ -72,5 +80,26 @@ class EyeAgent {
     direction.normalize();
     direction.mult(speed);
     return PVector.add(current, direction);
+  }
+
+  PVector constrainTargetToEye(PVector target, PVector eyeCenter) {
+    float dx = target.x - eyeCenter.x;
+    float dy = target.y - eyeCenter.y;
+
+    if (dx == 0 && dy == 0) {
+      return eyeCenter.copy();
+    }
+
+    float ellipseValue = sq(dx) / sq(targetRadiusX) + sq(dy) / sq(targetRadiusY); //Point inside the ellipse
+
+    if (ellipseValue <= 1) {
+      return target.copy();
+    }
+
+    float scale = 1 / sqrt(ellipseValue); //calculate the ratio of the original target to the closest point on the edge of the ellipse
+    return new PVector(
+      eyeCenter.x + dx * scale,
+      eyeCenter.y + dy * scale
+    );
   }
 }
