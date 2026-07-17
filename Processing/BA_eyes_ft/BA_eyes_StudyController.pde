@@ -1,5 +1,6 @@
 EyeRenderer eyeRenderer;
 EyeAgent eyeAgent;
+GazeInput gazeInput;
 
 EyeController activeEyeController;
 IdleMovementController idleMovementController;
@@ -16,9 +17,10 @@ void setup() {
     eyeRenderer.getEyeHeight(),
     eyeRenderer.getPupilDiameter()
   );
-  
+  gazeInput = new MouseGazeInput();
+
   idleMovementController = new IdleMovementController(eyeAgent);
-  gazeAwareController = new GazeAwareController(eyeAgent);
+  gazeAwareController = new GazeAwareController(eyeAgent, gazeInput);
 
   activeEyeController = idleMovementController;
 }
