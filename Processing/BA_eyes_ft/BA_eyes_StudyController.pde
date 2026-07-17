@@ -1,5 +1,6 @@
 EyeRenderer eyeRenderer;
 EyeAgent eyeAgent;
+IdleMovementController idleMovementController;
 
 void setup() {
   size(800, 800);
@@ -11,9 +12,11 @@ void setup() {
     eyeRenderer.getEyeHeight(),
     eyeRenderer.getPupilDiameter()
   );
+  idleMovementController = new IdleMovementController(eyeAgent);
 }
 
 void draw() {
+  idleMovementController.update();
   eyeAgent.update();
 
   eyeRenderer.clear();

@@ -65,6 +65,18 @@ class EyeAgent {
     return rightTarget.copy();
   }
 
+  PVector getLeftEyeCenter() {
+    return leftEyeCenter.copy();
+  }
+
+  float getTargetRadiusX() {
+    return targetRadiusX;
+  }
+
+  float getTargetRadiusY() {
+    return targetRadiusY;
+  }
+
   float getMovementSpeed() {
     return movementSpeed;
   }
