@@ -1,9 +1,13 @@
 EyeRenderer eyeRenderer;
 EyeAgent eyeAgent;
+
+EyeController activeEyeController;
 IdleMovementController idleMovementController;
+GazeAwareController gazeAwareController;
 
 void setup() {
-  size(800, 800);
+  //size(800, 800);
+  fullScreen();
   eyeRenderer = new EyeRenderer();
   eyeAgent = new EyeAgent(
     eyeRenderer.getLeftEyeCenter(),
@@ -12,11 +16,15 @@ void setup() {
     eyeRenderer.getEyeHeight(),
     eyeRenderer.getPupilDiameter()
   );
+  
   idleMovementController = new IdleMovementController(eyeAgent);
+  gazeAwareController = new GazeAwareController(eyeAgent);
+
+  activeEyeController = idleMovementController;
 }
 
 void draw() {
-  idleMovementController.update();
+  activeEyeController.update();
   eyeAgent.update();
 
   eyeRenderer.clear();

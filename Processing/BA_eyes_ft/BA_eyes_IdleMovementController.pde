@@ -1,4 +1,4 @@
-class IdleMovementController {
+class IdleMovementController implements EyeController {
   static final int TARGET_ANYWHERE = 0;
   static final int TARGET_NEAR_CENTER = 1;
   static final int TARGET_SMALL_SACCADE = 2;

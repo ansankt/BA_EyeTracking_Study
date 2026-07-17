@@ -1,0 +1,3 @@
+interface EyeController {
+  void update();
+}

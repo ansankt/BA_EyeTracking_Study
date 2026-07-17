@@ -6,7 +6,7 @@ class EyeRenderer {
   final float eyeHeight = 400;
   final float eyeDistance = 300;
 
-  final PVector leftEyeCenter = new PVector(250, 400);
+  final PVector leftEyeCenter = new PVector(displayWidth/2-(eyeDistance/2), displayHeight/2);
   final PVector rightEyeCenter = new PVector(leftEyeCenter.x + eyeDistance, leftEyeCenter.y);
 
   void clear() {
