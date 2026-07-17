@@ -17,12 +17,13 @@ void setup() {
     eyeRenderer.getEyeHeight(),
     eyeRenderer.getPupilDiameter()
   );
-  gazeInput = new MouseGazeInput();
+  gazeInput = new MouseGazeInput(); //to test Eye Behaviour if it gets input
 
   idleMovementController = new IdleMovementController(eyeAgent);
   gazeAwareController = new GazeAwareController(eyeAgent, gazeInput);
 
-  activeEyeController = idleMovementController;
+  // activeEyeController = idleMovementController;
+  activeEyeController = gazeAwareController;
 }
 
 void draw() {
@@ -34,4 +35,14 @@ void draw() {
     eyeAgent.getLeftPupilPosition(),
     eyeAgent.getRightPupilPosition()
   );
+}
+
+void keyPressed() {
+  if (key == '1') {
+    activeEyeController = idleMovementController;
+  }
+
+  if (key == '2') {
+    activeEyeController = gazeAwareController;
+  }
 }
