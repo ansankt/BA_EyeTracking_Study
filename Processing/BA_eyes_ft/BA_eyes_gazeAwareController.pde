@@ -1,11 +1,19 @@
 class GazeAwareController implements EyeController {
   EyeAgent eyeAgent;
+  GazeInput gazeInput;
 
-  GazeAwareController(EyeAgent eyeAgent) {
+  GazeAwareController(EyeAgent eyeAgent, GazeInput gazeInput) {
     this.eyeAgent = eyeAgent;
+    this.gazeInput = gazeInput;
   }
 
   void update() {
-    // Placeholder: later this will read gaze data and set targets on the EyeAgent.
+    GazeSample currentSample = gazeInput.getCurrentSample();
+
+    if (!currentSample.valid) {
+      return;
+    }
+
+    // Placeholder: later this will map gaze data to an eye target.
   }
 }
