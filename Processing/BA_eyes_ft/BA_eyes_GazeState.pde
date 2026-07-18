@@ -1,0 +1,6 @@
+enum GazeState {
+  MUTUAL_GAZE,
+  LOOKING_AT_FACE,
+  LOOKING_AWAY,
+  INVALID
+}
