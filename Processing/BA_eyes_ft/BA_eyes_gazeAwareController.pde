@@ -1,10 +1,14 @@
 class GazeAwareController implements EyeController {
   EyeAgent eyeAgent;
   GazeInput gazeInput;
+  GazeTargetMapper gazeTargetMapper;
 
-  GazeAwareController(EyeAgent eyeAgent, GazeInput gazeInput) {
+  float movementSpeed = 6.0;
+
+  GazeAwareController(EyeAgent eyeAgent, GazeInput gazeInput, GazeTargetMapper gazeTargetMapper) {
     this.eyeAgent = eyeAgent;
     this.gazeInput = gazeInput;
+    this.gazeTargetMapper = gazeTargetMapper;
   }
 
   void update() {
@@ -14,6 +18,7 @@ class GazeAwareController implements EyeController {
       return;
     }
 
-    // Placeholder: later this will map gaze data to an eye target.
+    eyeAgent.setMovementSpeed(movementSpeed);
+    eyeAgent.setSharedTargetFromLeftEye(gazeTargetMapper.leftPupilTargetForSample(currentSample));
   }
 }

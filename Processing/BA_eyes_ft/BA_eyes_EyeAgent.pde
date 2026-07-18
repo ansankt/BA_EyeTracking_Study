@@ -69,6 +69,17 @@ class EyeAgent {
     return leftEyeCenter.copy();
   }
 
+  PVector getRightEyeCenter() {
+    return rightEyeCenter.copy();
+  }
+
+  PVector getFaceCenter() {
+    return new PVector(
+      (leftEyeCenter.x + rightEyeCenter.x) / 2,
+      (leftEyeCenter.y + rightEyeCenter.y) / 2
+    );
+  }
+
   float getTargetRadiusX() {
     return targetRadiusX;
   }
