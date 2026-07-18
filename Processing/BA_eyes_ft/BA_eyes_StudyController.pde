@@ -2,6 +2,7 @@ EyeRenderer eyeRenderer;
 EyeAgent eyeAgent;
 GazeInput gazeInput;
 GazeMapper gazeMapper;
+GazeTargetMapper gazeTargetMapper;
 GazeClassifier gazeClassifier;
 GazeSample currentGazeSample;
 GazeRegion currentGazeRegion = GazeRegion.INVALID;
@@ -25,10 +26,11 @@ void setup() {
   );
   gazeInput = new MouseGazeInput(); //to test Eye Behaviour if it gets input
   gazeMapper = new GazeMapper(eyeAgent, eyeRenderer.getEyeWidth(), eyeRenderer.getEyeHeight());
-  gazeClassifier = new GazeClassifier(eyeAgent);
+  gazeTargetMapper = new GazeTargetMapper(eyeAgent);
+  gazeClassifier = new GazeClassifier(eyeAgent, gazeTargetMapper);
 
   idleMovementController = new IdleMovementController(eyeAgent);
-  gazeAwareController = new GazeAwareController(eyeAgent, gazeInput);
+  gazeAwareController = new GazeAwareController(eyeAgent, gazeInput, gazeTargetMapper);
 
   // activeEyeController = idleMovementController;
   activeEyeController = gazeAwareController;

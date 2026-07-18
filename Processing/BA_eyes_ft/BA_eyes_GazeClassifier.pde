@@ -1,6 +1,5 @@
 class GazeClassifier {
   int stableDuration = 150;
-  float inputDistanceForMaxEyeMovement = 350;
   float mutualGazeTolerance = 18;
 
   GazeState stableState = GazeState.INVALID;
@@ -13,9 +12,11 @@ class GazeClassifier {
   boolean gazeBreakDetected = false;
 
   EyeAgent eyeAgent;
+  GazeTargetMapper gazeTargetMapper;
 
-  GazeClassifier(EyeAgent eyeAgent) {
+  GazeClassifier(EyeAgent eyeAgent, GazeTargetMapper gazeTargetMapper) {
     this.eyeAgent = eyeAgent;
+    this.gazeTargetMapper = gazeTargetMapper;
     candidateSince = millis();
     lastStateChangeTime = millis();
   }
@@ -68,23 +69,10 @@ class GazeClassifier {
       return false;
     }
 
-    PVector expectedLeftPupil = expectedLeftPupilTargetForSample(sample);
+    PVector expectedLeftPupil = gazeTargetMapper.leftPupilTargetForSample(sample);
     PVector currentLeftPupil = eyeAgent.getLeftPupilPosition();
 
     return currentLeftPupil.dist(expectedLeftPupil) <= mutualGazeTolerance;
-  }
-
-  PVector expectedLeftPupilTargetForSample(GazeSample sample) {
-    PVector faceCenter = eyeAgent.getFaceCenter();
-    PVector leftEyeCenter = eyeAgent.getLeftEyeCenter();
-
-    float dx = sample.x - faceCenter.x;
-    float dy = sample.y - faceCenter.y;
-
-    float targetX = leftEyeCenter.x + dx / inputDistanceForMaxEyeMovement * eyeAgent.getTargetRadiusX();
-    float targetY = leftEyeCenter.y + dy / inputDistanceForMaxEyeMovement * eyeAgent.getTargetRadiusY();
-
-    return eyeAgent.constrainTargetToEye(new PVector(targetX, targetY), leftEyeCenter);
   }
 
   GazeState getStableState() {
