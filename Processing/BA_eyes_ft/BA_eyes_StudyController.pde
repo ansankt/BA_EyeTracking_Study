@@ -12,6 +12,15 @@ boolean gazeBreakDetected = false;
 int lastSampleLogTime = 0;
 int sampleLogInterval = 33;
 
+String participantId = "P_TEST";
+
+StudyPhase studyPhase = StudyPhase.INTRO;
+Trial[] trials;
+int currentTrialIndex = -1;
+Trial currentTrial;
+int breakStartTime = 0;
+int breakDuration = 2500;
+
 EyeController activeEyeController;
 IdleMovementController idleMovementController;
 GazeAwareController gazeAwareController;
@@ -39,22 +48,30 @@ void setup() {
 
   // activeEyeController = idleMovementController;
   activeEyeController = gazeAwareController;
-  eventLogger.setContext("P_TEST", 0, activeCondition);
+  eventLogger.setContext(participantId, 0, activeCondition);
   eventLogger.logEvent("SESSION_START", currentGazeRegion, currentGazeState, "Mouse input test session");
+
+  setupTrials();
 }
 
 void draw() {
   currentGazeSample = gazeInput.getCurrentSample();
   currentGazeRegion = gazeMapper.map(currentGazeSample);
 
-  activeEyeController.update();
-  eyeAgent.update();
+  updateStudyFlow();
+
+  if (studyPhase == StudyPhase.TRIAL_RUNNING) {
+    activeEyeController.update();
+    eyeAgent.update();
+  }
 
   gazeClassifier.update(currentGazeRegion, currentGazeSample);
   currentGazeState = gazeClassifier.getStableState();
   gazeBreakDetected = gazeClassifier.hasGazeBreakDetected();
 
-  logCurrentFrame();
+  if (studyPhase == StudyPhase.TRIAL_RUNNING) {
+    logCurrentFrame();
+  }
 
   eyeRenderer.clear();
   eyeRenderer.drawEyes(
@@ -65,6 +82,14 @@ void draw() {
 }
 
 void keyPressed() {
+  if (key == ' ') {
+    if (studyPhase == StudyPhase.INTRO) {
+      startNextTrial();
+    } else if (studyPhase == StudyPhase.BREAK) {
+      startNextTrial();
+    }
+  }
+
   if (key == '1') {
     activeEyeController = idleMovementController;
     setActiveCondition("GAZE_UNAWARE");
@@ -76,7 +101,78 @@ void keyPressed() {
   }
 }
 
+void setupTrials() {
+  String[] conditions = counterbalancedConditions(participantId);
+  trials = new Trial[conditions.length];
+
+  for (int i = 0; i < conditions.length; i++) {
+    trials[i] = new Trial(i + 1, conditions[i], 20000);
+  }
+}
+
+String[] counterbalancedConditions(String participantId) {
+  if (participantIdIsEven(participantId)) {
+    return new String[] { "GAZE_AWARE", "GAZE_UNAWARE" };
+  }
+
+  return new String[] { "GAZE_UNAWARE", "GAZE_AWARE" };
+}
+
+boolean participantIdIsEven(String participantId) {
+  String digits = "";
+
+  for (int i = 0; i < participantId.length(); i++) {
+    char currentChar = participantId.charAt(i);
+
+    if (currentChar >= '0' && currentChar <= '9') {
+      digits += currentChar;
+    }
+  }
+
+  if (digits.length() == 0) {
+    return false;
+  }
+
+  return int(digits) % 2 == 0;
+}
+
+void updateStudyFlow() {
+  if (studyPhase == StudyPhase.TRIAL_RUNNING && millis() - eventLogger.trialStartTime >= currentTrial.durationMs) {
+    endCurrentTrial();
+  }
+}
+
+void startNextTrial() {
+  currentTrialIndex++;
+
+  if (currentTrialIndex >= trials.length) {
+    finishStudy();
+    return;
+  }
+
+  currentTrial = trials[currentTrialIndex];
+  studyPhase = StudyPhase.TRIAL_RUNNING;
+
+  setActiveCondition(currentTrial.condition);
+  eventLogger.startTrial(currentTrial.id, currentTrial.condition);
+  eventLogger.logEvent("TRIAL_START", currentGazeRegion, currentGazeState, "duration_ms=" + currentTrial.durationMs);
+}
+
+void endCurrentTrial() {
+  eventLogger.logEvent("TRIAL_END", currentGazeRegion, currentGazeState, "");
+  studyPhase = StudyPhase.BREAK;
+  breakStartTime = millis();
+  eventLogger.logEvent("BREAK_START", currentGazeRegion, currentGazeState, "");
+}
+
+void finishStudy() {
+  studyPhase = StudyPhase.FINISHED;
+  eventLogger.logEvent("STUDY_FINISHED", currentGazeRegion, currentGazeState, "");
+}
+
 void setActiveCondition(String condition) {
+  applyActiveControllerForCondition(condition);
+
   if (condition.equals(activeCondition)) {
     return;
   }
@@ -84,6 +180,16 @@ void setActiveCondition(String condition) {
   activeCondition = condition;
   eventLogger.setCondition(activeCondition);
   eventLogger.logEvent("CONDITION_SWITCH", currentGazeRegion, currentGazeState, activeCondition);
+}
+
+void applyActiveControllerForCondition(String condition) {
+  if (condition.equals("GAZE_UNAWARE")) {
+    activeEyeController = idleMovementController;
+  }
+
+  if (condition.equals("GAZE_AWARE")) {
+    activeEyeController = gazeAwareController;
+  }
 }
 
 void logCurrentFrame() {
@@ -112,11 +218,32 @@ void drawDebugInfo() {
 
   fill(0);
   textSize(18);
-  text("Gaze region: " + currentGazeRegion, 24, 34);
-  text("Gaze state: " + currentGazeState, 24, 58);
+  text("Phase: " + studyPhase, 24, 34);
+  text("Condition: " + activeCondition, 24, 58);
+  text("Gaze region: " + currentGazeRegion, 24, 82);
+  text("Gaze state: " + currentGazeState, 24, 106);
+
+  if (studyPhase == StudyPhase.INTRO) {
+    text("Press SPACE to start", 24, 130);
+  }
+
+  if (studyPhase == StudyPhase.TRIAL_RUNNING && currentTrial != null) {
+    int remainingTime = max(0, currentTrial.durationMs - eventLogger.trialTime());
+    text("Trial: " + currentTrial.id + " / " + trials.length, 24, 130);
+    text("Remaining: " + nf(remainingTime / 1000.0, 0, 1) + "s", 24, 154);
+  }
+
+  if (studyPhase == StudyPhase.BREAK) {
+    text("Break", 24, 130);
+    text("Press SPACE after questionnaire", 24, 154);
+  }
+
+  if (studyPhase == StudyPhase.FINISHED) {
+    text("Finished", 24, 130);
+  }
 
   if (gazeBreakDetected) {
-    text("Gaze break", 24, 82);
+    text("Gaze break", 24, 178);
   }
 
   popStyle();
