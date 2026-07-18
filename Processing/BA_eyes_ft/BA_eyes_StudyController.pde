@@ -90,6 +90,10 @@ void keyPressed() {
     }
   }
 
+  if (key == ENTER || key == RETURN) {
+    completeCurrentQuestion();
+  }
+
   if (key == '1') {
     activeEyeController = idleMovementController;
     setActiveCondition("GAZE_UNAWARE");
@@ -101,12 +105,12 @@ void keyPressed() {
   }
 }
 
-void setupTrials() {
+void setupTrials() { //initializes counterbalanced Order
   String[] conditions = counterbalancedConditions(participantId);
   trials = new Trial[conditions.length];
 
   for (int i = 0; i < conditions.length; i++) {
-    trials[i] = new Trial(i + 1, conditions[i], 20000);
+    trials[i] = new Trial(i + 1, conditions[i], 5);
   }
 }
 
@@ -137,7 +141,7 @@ boolean participantIdIsEven(String participantId) {
 }
 
 void updateStudyFlow() {
-  if (studyPhase == StudyPhase.TRIAL_RUNNING && millis() - eventLogger.trialStartTime >= currentTrial.durationMs) {
+  if (studyPhase == StudyPhase.TRIAL_RUNNING && currentTrial.isComplete()) {
     endCurrentTrial();
   }
 }
@@ -155,7 +159,25 @@ void startNextTrial() {
 
   setActiveCondition(currentTrial.condition);
   eventLogger.startTrial(currentTrial.id, currentTrial.condition);
-  eventLogger.logEvent("TRIAL_START", currentGazeRegion, currentGazeState, "duration_ms=" + currentTrial.durationMs);
+  eventLogger.logEvent("TRIAL_START", currentGazeRegion, currentGazeState, "question_count=" + currentTrial.questionCount);
+}
+
+void completeCurrentQuestion() {
+  if (studyPhase != StudyPhase.TRIAL_RUNNING || currentTrial == null) {
+    return;
+  }
+
+  currentTrial.completeQuestion();
+  eventLogger.logEvent(
+    "QUESTION_COMPLETED",
+    currentGazeRegion,
+    currentGazeState,
+    "completed_questions=" + currentTrial.completedQuestions + ";question_count=" + currentTrial.questionCount
+  );
+
+  if (currentTrial.isComplete()) {
+    endCurrentTrial();
+  }
 }
 
 void endCurrentTrial() {
@@ -228,9 +250,9 @@ void drawDebugInfo() {
   }
 
   if (studyPhase == StudyPhase.TRIAL_RUNNING && currentTrial != null) {
-    int remainingTime = max(0, currentTrial.durationMs - eventLogger.trialTime());
     text("Trial: " + currentTrial.id + " / " + trials.length, 24, 130);
-    text("Remaining: " + nf(remainingTime / 1000.0, 0, 1) + "s", 24, 154);
+    text("Questions: " + currentTrial.completedQuestions + " / " + currentTrial.questionCount, 24, 154);
+    text("Press ENTER after question", 24, 178);
   }
 
   if (studyPhase == StudyPhase.BREAK) {
@@ -243,7 +265,7 @@ void drawDebugInfo() {
   }
 
   if (gazeBreakDetected) {
-    text("Gaze break", 24, 178);
+    text("Gaze break", 24, 202);
   }
 
   popStyle();
