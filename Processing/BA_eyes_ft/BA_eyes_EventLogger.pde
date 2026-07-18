@@ -31,6 +31,12 @@ class EventLogger {
     this.condition = condition;
   }
 
+  void startTrial(int trialId, String condition) {
+    this.trialId = trialId;
+    this.condition = condition;
+    trialStartTime = millis();
+  }
+
   void logEvent(String eventType, GazeRegion region, GazeState state, String details) {
     eventWriter.println(
       millis() + ","
