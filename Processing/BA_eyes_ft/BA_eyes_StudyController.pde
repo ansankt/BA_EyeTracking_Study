@@ -1,6 +1,11 @@
 EyeRenderer eyeRenderer;
 EyeAgent eyeAgent;
 GazeInput gazeInput;
+GazeMapper gazeMapper;
+GazeClassifier gazeClassifier;
+GazeRegion currentGazeRegion = GazeRegion.INVALID;
+GazeState currentGazeState = GazeState.INVALID;
+boolean gazeBreakDetected = false;
 
 EyeController activeEyeController;
 IdleMovementController idleMovementController;
@@ -18,6 +23,8 @@ void setup() {
     eyeRenderer.getPupilDiameter()
   );
   gazeInput = new MouseGazeInput(); //to test Eye Behaviour if it gets input
+  gazeMapper = new GazeMapper(eyeAgent, eyeRenderer.getEyeWidth(), eyeRenderer.getEyeHeight());
+  gazeClassifier = new GazeClassifier();
 
   idleMovementController = new IdleMovementController(eyeAgent);
   gazeAwareController = new GazeAwareController(eyeAgent, gazeInput);
@@ -27,6 +34,11 @@ void setup() {
 }
 
 void draw() {
+  currentGazeRegion = gazeMapper.map(gazeInput.getCurrentSample());
+  gazeClassifier.update(currentGazeRegion);
+  currentGazeState = gazeClassifier.getStableState();
+  gazeBreakDetected = gazeClassifier.hasGazeBreakDetected();
+
   activeEyeController.update();
   eyeAgent.update();
 
@@ -35,6 +47,7 @@ void draw() {
     eyeAgent.getLeftPupilPosition(),
     eyeAgent.getRightPupilPosition()
   );
+  drawDebugInfo();
 }
 
 void keyPressed() {
@@ -45,4 +58,19 @@ void keyPressed() {
   if (key == '2') {
     activeEyeController = gazeAwareController;
   }
+}
+
+void drawDebugInfo() {
+  pushStyle();
+
+  fill(0);
+  textSize(18);
+  text("Gaze region: " + currentGazeRegion, 24, 34);
+  text("Gaze state: " + currentGazeState, 24, 58);
+
+  if (gazeBreakDetected) {
+    text("Gaze break", 24, 82);
+  }
+
+  popStyle();
 }
