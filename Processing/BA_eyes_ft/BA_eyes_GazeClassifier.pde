@@ -1,6 +1,7 @@
 class GazeClassifier {
   int stableDuration = 150;
-  float mutualGazeTolerance = 18;
+  float pupilHitRadius;
+  float agentLooksAtUserTolerance = 18;
 
   GazeState stableState = GazeState.INVALID;
   GazeState candidateState = GazeState.INVALID;
@@ -12,11 +13,10 @@ class GazeClassifier {
   boolean gazeBreakDetected = false;
 
   EyeAgent eyeAgent;
-  GazeTargetMapper gazeTargetMapper;
 
-  GazeClassifier(EyeAgent eyeAgent, GazeTargetMapper gazeTargetMapper) {
+  GazeClassifier(EyeAgent eyeAgent, float pupilDiameter) {
     this.eyeAgent = eyeAgent;
-    this.gazeTargetMapper = gazeTargetMapper;
+    pupilHitRadius = pupilDiameter / 2;
     candidateSince = millis();
     lastStateChangeTime = millis();
   }
@@ -46,7 +46,7 @@ class GazeClassifier {
 
   GazeState mapRegionToState(GazeRegion region, GazeSample sample) {
     if (region == GazeRegion.LEFT_EYE || region == GazeRegion.RIGHT_EYE) {
-      if (agentEyesLookAtSample(sample)) {
+      if (sampleHitsCurrentPupil(region, sample) && agentLooksAtUser()) {
         return GazeState.MUTUAL_GAZE;
       }
 
@@ -64,15 +64,27 @@ class GazeClassifier {
     return GazeState.INVALID;
   }
 
-  boolean agentEyesLookAtSample(GazeSample sample) {
+  boolean sampleHitsCurrentPupil(GazeRegion region, GazeSample sample) {
     if (sample == null || !sample.valid) {
       return false;
     }
 
-    PVector expectedLeftPupil = gazeTargetMapper.leftPupilTargetForSample(sample);
-    PVector currentLeftPupil = eyeAgent.getLeftPupilPosition();
+    PVector gazePoint = new PVector(sample.x, sample.y);
 
-    return currentLeftPupil.dist(expectedLeftPupil) <= mutualGazeTolerance;
+    if (region == GazeRegion.LEFT_EYE) {
+      return gazePoint.dist(eyeAgent.getLeftPupilPosition()) <= pupilHitRadius;
+    }
+
+    if (region == GazeRegion.RIGHT_EYE) {
+      return gazePoint.dist(eyeAgent.getRightPupilPosition()) <= pupilHitRadius;
+    }
+
+    return false;
+  }
+
+  boolean agentLooksAtUser() {
+    return eyeAgent.getLeftPupilPosition().dist(eyeAgent.getLeftEyeCenter()) <= agentLooksAtUserTolerance;
+      // && eyeAgent.getRightPupilPosition().dist(eyeAgent.getRightEyeCenter()) <= agentLooksAtUserTolerance; //right not needed because pupils are mirrored
   }
 
   GazeState getStableState() {
