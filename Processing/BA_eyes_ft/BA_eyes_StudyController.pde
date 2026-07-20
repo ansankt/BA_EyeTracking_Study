@@ -10,7 +10,7 @@ QuestionController questionController;
 GazeSample currentGazeSample;
 GazeRegion currentGazeRegion = GazeRegion.INVALID;
 GazeState currentGazeState = GazeState.INVALID;
-boolean gazeBreakDetected = false;
+boolean mutualGazeEnded = false;
 int lastSampleLogTime = 0;
 
 StudyPhase studyPhase = StudyPhase.INTRO;
@@ -77,7 +77,7 @@ void draw() {
 
   gazeClassifier.update(currentGazeRegion, currentGazeSample);
   currentGazeState = gazeClassifier.getStableState();
-  gazeBreakDetected = gazeClassifier.hasGazeBreakDetected();
+  mutualGazeEnded = gazeClassifier.hasMutualGazeEnded();
 
   if (studyPhase == StudyPhase.TRIAL_RUNNING) {
     logCurrentFrame();
@@ -266,8 +266,8 @@ void logCurrentFrame() {
     eventLogger.logEvent("GAZE_STATE_CHANGE", currentGazeRegion, currentGazeState, "");
   }
 
-  if (gazeBreakDetected) {
-    eventLogger.logEvent("GAZE_BREAK", currentGazeRegion, currentGazeState, "");
+  if (mutualGazeEnded) {
+    eventLogger.logEvent("MUTUAL_GAZE_ENDED", currentGazeRegion, currentGazeState, "");
   }
 
   if (millis() - lastSampleLogTime >= config.sampleLogInterval) {
@@ -314,8 +314,8 @@ void drawDebugInfo() {
     text("Finished", 24, 178);
   }
 
-  if (gazeBreakDetected) {
-    text("Gaze break", 24, 274);
+  if (mutualGazeEnded) {
+    text("Mutual gaze ended", 24, 274);
   }
 
   popStyle();

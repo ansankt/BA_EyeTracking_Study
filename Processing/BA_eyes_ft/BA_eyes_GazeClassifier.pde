@@ -10,7 +10,7 @@ class GazeClassifier {
   int lastStateChangeTime = 0;
 
   boolean stateChanged = false;
-  boolean gazeBreakDetected = false;
+  boolean mutualGazeEnded = false;
 
   EyeAgent eyeAgent;
 
@@ -23,7 +23,7 @@ class GazeClassifier {
 
   void update(GazeRegion region, GazeSample sample) {
     stateChanged = false;
-    gazeBreakDetected = false;
+    mutualGazeEnded = false;
 
     GazeState mappedState = mapRegionToState(region, sample);
 
@@ -39,7 +39,7 @@ class GazeClassifier {
       lastStateChangeTime = millis();
       stateChanged = true;
 
-      gazeBreakDetected = previousState == GazeState.MUTUAL_GAZE
+      mutualGazeEnded = previousState == GazeState.MUTUAL_GAZE
         && stableState != GazeState.MUTUAL_GAZE;
     }
   }
@@ -99,8 +99,8 @@ class GazeClassifier {
     return stateChanged;
   }
 
-  boolean hasGazeBreakDetected() {
-    return gazeBreakDetected;
+  boolean hasMutualGazeEnded() {
+    return mutualGazeEnded;
   }
 
   int getCurrentStateDuration() {
