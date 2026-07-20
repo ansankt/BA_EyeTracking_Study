@@ -5,6 +5,7 @@ GazeMapper gazeMapper;
 GazeTargetMapper gazeTargetMapper;
 GazeClassifier gazeClassifier;
 EventLogger eventLogger;
+QuestionController questionController;
 GazeSample currentGazeSample;
 GazeRegion currentGazeRegion = GazeRegion.INVALID;
 GazeState currentGazeState = GazeState.INVALID;
@@ -63,6 +64,7 @@ void draw() {
   if (studyPhase == StudyPhase.TRIAL_RUNNING) {
     activeEyeController.update();
     eyeAgent.update();
+    questionController.update();
   }
 
   gazeClassifier.update(currentGazeRegion, currentGazeSample);
@@ -91,7 +93,7 @@ void keyPressed() {
   }
 
   if (key == ENTER || key == RETURN) {
-    completeCurrentQuestion();
+    handleQuestionEnter();
   }
 
   if (key == '1') {
@@ -107,11 +109,41 @@ void keyPressed() {
 
 void setupTrials() { //initializes counterbalanced Order
   String[] conditions = counterbalancedConditions(participantId);
+  Question[] shuffledQuestions = shuffledQuestions();
   trials = new Trial[conditions.length];
 
   for (int i = 0; i < conditions.length; i++) {
-    trials[i] = new Trial(i + 1, conditions[i], 5);
+    trials[i] = new Trial(i + 1, conditions[i], questionsForTrial(shuffledQuestions, i, 5));
   }
+}
+
+Question[] shuffledQuestions() {
+  Question[] questions = new Question[10];
+
+  for (int i = 0; i < questions.length; i++) {
+    int questionNumber = i + 1;
+    questions[i] = new Question("Q" + nf(questionNumber, 2), sketchPath("questions/question_" + questionNumber + ".mp3"));
+  }
+
+  for (int i = questions.length - 1; i > 0; i--) {
+    int randomIndex = int(random(i + 1));
+    Question tempQuestion = questions[i];
+    questions[i] = questions[randomIndex];
+    questions[randomIndex] = tempQuestion;
+  }
+
+  return questions;
+}
+
+Question[] questionsForTrial(Question[] shuffledQuestions, int trialIndex, int questionCount) {
+  Question[] trialQuestions = new Question[questionCount];
+  int startIndex = trialIndex * questionCount;
+
+  for (int i = 0; i < questionCount; i++) {
+    trialQuestions[i] = shuffledQuestions[startIndex + i];
+  }
+
+  return trialQuestions;
 }
 
 String[] counterbalancedConditions(String participantId) {
@@ -141,7 +173,7 @@ boolean participantIdIsEven(String participantId) {
 }
 
 void updateStudyFlow() {
-  if (studyPhase == StudyPhase.TRIAL_RUNNING && currentTrial.isComplete()) {
+  if (studyPhase == StudyPhase.TRIAL_RUNNING && questionController.isComplete()) {
     endCurrentTrial();
   }
 }
@@ -159,23 +191,18 @@ void startNextTrial() {
 
   setActiveCondition(currentTrial.condition);
   eventLogger.startTrial(currentTrial.id, currentTrial.condition);
-  eventLogger.logEvent("TRIAL_START", currentGazeRegion, currentGazeState, "question_count=" + currentTrial.questionCount);
+  questionController = new QuestionController(this, currentTrial.questions, eventLogger);
+  eventLogger.logEvent("TRIAL_START", currentGazeRegion, currentGazeState, "question_count=" + currentTrial.questions.length);
 }
 
-void completeCurrentQuestion() {
+void handleQuestionEnter() {
   if (studyPhase != StudyPhase.TRIAL_RUNNING || currentTrial == null) {
     return;
   }
 
-  currentTrial.completeQuestion();
-  eventLogger.logEvent(
-    "QUESTION_COMPLETED",
-    currentGazeRegion,
-    currentGazeState,
-    "completed_questions=" + currentTrial.completedQuestions + ";question_count=" + currentTrial.questionCount
-  );
+  questionController.handleEnter();
 
-  if (currentTrial.isComplete()) {
+  if (questionController.isComplete()) {
     endCurrentTrial();
   }
 }
@@ -251,8 +278,9 @@ void drawDebugInfo() {
 
   if (studyPhase == StudyPhase.TRIAL_RUNNING && currentTrial != null) {
     text("Trial: " + currentTrial.id + " / " + trials.length, 24, 130);
-    text("Questions: " + currentTrial.completedQuestions + " / " + currentTrial.questionCount, 24, 154);
-    text("Press ENTER after question", 24, 178);
+    text("Question: " + questionController.currentQuestionNumber() + " / " + questionController.questionCount(), 24, 154);
+    text("Question phase: " + questionController.getPhase(), 24, 178);
+    text("Current question: " + questionController.currentQuestionId(), 24, 202);
   }
 
   if (studyPhase == StudyPhase.BREAK) {
@@ -265,7 +293,7 @@ void drawDebugInfo() {
   }
 
   if (gazeBreakDetected) {
-    text("Gaze break", 24, 202);
+    text("Gaze break", 24, 226);
   }
 
   popStyle();
