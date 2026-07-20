@@ -22,12 +22,12 @@ class QuestionController {
     if (phase == QuestionPhase.PLAYING_AUDIO && currentAudio != null && !currentAudio.isPlaying()) {
       phase = QuestionPhase.ANSWER_LOCKED;
       phaseStartTime = millis();
-      eventLogger.logEvent("QUESTION_AUDIO_ENDED", currentGazeRegion, currentGazeState, currentQuestion.id);
+      logQuestionEvent("QUESTION_AUDIO_ENDED");
     }
 
     if (phase == QuestionPhase.ANSWER_LOCKED && millis() - phaseStartTime >= answerLockoutAfterAudioMs) {
       phase = QuestionPhase.WAITING_FOR_ANSWER;
-      eventLogger.logEvent("QUESTION_ANSWER_ENABLED", currentGazeRegion, currentGazeState, currentQuestion.id);
+      logQuestionEvent("QUESTION_ANSWER_ENABLED");
     }
   }
 
@@ -56,11 +56,11 @@ class QuestionController {
 
     phase = QuestionPhase.PLAYING_AUDIO;
     phaseStartTime = millis();
-    eventLogger.logEvent("QUESTION_STARTED", currentGazeRegion, currentGazeState, currentQuestion.id);
+    logQuestionEvent("QUESTION_STARTED");
   }
 
   void completeCurrentQuestion() {
-    eventLogger.logEvent("QUESTION_COMPLETED", currentGazeRegion, currentGazeState, currentQuestion.id);
+    logQuestionEvent("QUESTION_COMPLETED");
     completedQuestions++;
 
     if (completedQuestions >= questions.length) {
@@ -101,5 +101,15 @@ class QuestionController {
 
   QuestionPhase getPhase() {
     return phase;
+  }
+
+  void logQuestionEvent(String eventType) {
+    eventLogger.logQuestionEvent(
+      eventType,
+      currentGazeRegion,
+      currentGazeState,
+      currentQuestion.id,
+      currentQuestionIndex + 1
+    );
   }
 }
