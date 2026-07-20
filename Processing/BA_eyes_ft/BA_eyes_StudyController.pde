@@ -70,7 +70,7 @@ void draw() {
   updateStudyFlow();
 
   if (studyPhase == StudyPhase.TRIAL_RUNNING) {
-    activeEyeController.update(currentGazeRegion);
+    activeEyeController.update(currentGazeRegion, currentGazeSample);
     eyeAgent.update();
     questionController.update();
   }

@@ -23,6 +23,7 @@ class StudyConfig {
   int maxMutualGazeDurationMs = 3600;
   int gazeBreakDurationMs = 1250;
 
+  float gazeAwareMutualTriggerEyeScale = 0.45;
   float gazeAwareMutualGazeSpeed = 6.0;
   float gazeAwareBreakSpeed = 5.0;
 }

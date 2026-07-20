@@ -17,22 +17,23 @@ class GazeAwareController implements EyeController {
     resetToRandomGaze();
   }
 
-  void update(GazeRegion currentGazeRegion) {
+  void update(GazeRegion currentGazeRegion, GazeSample currentGazeSample) {
     boolean userLookingAtEyes = isUserLookingAtEyes(currentGazeRegion);
+    boolean userLookingAtMutualTriggerZone = isUserLookingAtMutualTriggerZone(currentGazeSample);
 
     if (mode == GazeAwareMode.RANDOM_GAZE) {
-      updateRandomGaze(userLookingAtEyes, currentGazeRegion);
+      updateRandomGaze(userLookingAtMutualTriggerZone, currentGazeRegion, currentGazeSample);
     } else if (mode == GazeAwareMode.MUTUAL_GAZE) {
       updateMutualGaze(userLookingAtEyes);
     } else if (mode == GazeAwareMode.GAZE_BREAK) {
-      updateGazeBreak(userLookingAtEyes);
+      updateGazeBreak(userLookingAtMutualTriggerZone);
     }
   }
 
-  void updateRandomGaze(boolean userLookingAtEyes, GazeRegion currentGazeRegion) {
-    randomGazeController.update(currentGazeRegion);
+  void updateRandomGaze(boolean userLookingAtMutualTriggerZone, GazeRegion currentGazeRegion, GazeSample currentGazeSample) {
+    randomGazeController.update(currentGazeRegion, currentGazeSample);
 
-    if (userLookingAtEyes) {
+    if (userLookingAtMutualTriggerZone) {
       if (lookingAtEyesSince < 0) {
         lookingAtEyesSince = millis();
       }
@@ -125,6 +126,28 @@ class GazeAwareController implements EyeController {
 
   boolean isUserLookingAtEyes(GazeRegion region) {
     return region == GazeRegion.LEFT_EYE || region == GazeRegion.RIGHT_EYE;
+  }
+
+  boolean isUserLookingAtMutualTriggerZone(GazeSample sample) {
+    if (sample == null || !sample.valid) {
+      return false;
+    }
+
+    PVector gazePoint = new PVector(sample.x, sample.y);
+
+    return isInsideScaledEye(gazePoint, eyeAgent.getLeftEyeCenter())
+      || isInsideScaledEye(gazePoint, eyeAgent.getRightEyeCenter());
+  }
+
+  boolean isInsideScaledEye(PVector point, PVector eyeCenter) {
+    float radiusX = eyeAgent.getTargetRadiusX() * config.gazeAwareMutualTriggerEyeScale;
+    float radiusY = eyeAgent.getTargetRadiusY() * config.gazeAwareMutualTriggerEyeScale;
+
+    float dx = point.x - eyeCenter.x;
+    float dy = point.y - eyeCenter.y;
+    float ellipseValue = sq(dx) / sq(radiusX) + sq(dy) / sq(radiusY);
+
+    return ellipseValue <= 1;
   }
 
   GazeAwareMode getMode() {

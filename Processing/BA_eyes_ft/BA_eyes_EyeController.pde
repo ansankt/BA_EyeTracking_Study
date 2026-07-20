@@ -1,3 +1,3 @@
 interface EyeController {
-  void update(GazeRegion currentGazeRegion);
+  void update(GazeRegion currentGazeRegion, GazeSample currentGazeSample);
 }
