@@ -29,7 +29,7 @@ class IdleMovementController implements EyeController {
     startWaiting();
   }
 
-  void update() {
+  void update(GazeRegion currentGazeRegion) {
     if (waiting) {
       if (millis() >= waitUntil) {
         waiting = false;

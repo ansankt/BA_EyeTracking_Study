@@ -17,4 +17,12 @@ class StudyConfig {
   String gazeInputMode = "MOUSE";
   String mouseGazeInputMode = "MOUSE";
   String tobiiGazeInputMode = "TOBII";
+
+  int lookingAtEyesToMutualGazeMs = 300;
+  int lostGazeToRandomMs = 200;
+  int maxMutualGazeDurationMs = 3600;
+  int gazeBreakDurationMs = 1250;
+
+  float gazeAwareMutualGazeSpeed = 6.0;
+  float gazeAwareBreakSpeed = 5.0;
 }
