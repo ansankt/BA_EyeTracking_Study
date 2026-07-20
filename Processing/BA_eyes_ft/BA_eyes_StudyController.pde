@@ -42,7 +42,7 @@ void setup() {
   gazeMapper = new GazeMapper(eyeAgent, eyeRenderer.getEyeWidth(), eyeRenderer.getEyeHeight());
   gazeTargetMapper = new GazeTargetMapper(eyeAgent);
   gazeClassifier = new GazeClassifier(eyeAgent, eyeRenderer.getPupilDiameter());
-  eventLogger = new EventLogger();
+  eventLogger = new EventLogger(participantId);
 
   idleMovementController = new IdleMovementController(eyeAgent);
   gazeAwareController = new GazeAwareController(eyeAgent, gazeInput, gazeTargetMapper);

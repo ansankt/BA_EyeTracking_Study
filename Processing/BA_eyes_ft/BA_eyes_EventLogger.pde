@@ -6,15 +6,20 @@ class EventLogger {
   int trialId = 0;
   String condition = "TEST";
   int trialStartTime = 0;
+  String sessionId;
 
-  EventLogger() {
+  EventLogger(String participantId) {
+    this.participantId = participantId;
+    sessionId = createSessionId();
+
     java.io.File dataDirectory = new java.io.File(sketchPath("data"));
     dataDirectory.mkdirs();
 
-    eventWriter = createWriter(dataDirectory.getAbsolutePath() + "/events.csv");
-    sampleWriter = createWriter(dataDirectory.getAbsolutePath() + "/samples.csv");
+    String filePrefix = safeFileName(participantId) + "_" + sessionId;
+    eventWriter = createWriter(dataDirectory.getAbsolutePath() + "/" + filePrefix + "_events.csv");
+    sampleWriter = createWriter(dataDirectory.getAbsolutePath() + "/" + filePrefix + "_samples.csv");
 
-    eventWriter.println("timestamp_ms,trial_time_ms,participant_id,trial_id,condition,event_type,gaze_region,gaze_state,details");
+    eventWriter.println("timestamp_ms,trial_time_ms,participant_id,trial_id,condition,event_type,gaze_region,gaze_state,question_id,question_order_in_trial,details");
     sampleWriter.println("timestamp_ms,trial_time_ms,participant_id,trial_id,condition,gaze_x,gaze_y,gaze_valid,gaze_region,gaze_state,left_pupil_x,left_pupil_y,right_pupil_x,right_pupil_y");
 
     flush();
@@ -47,7 +52,26 @@ class EventLogger {
       + csv(eventType) + ","
       + csv(value(region)) + ","
       + csv(value(state)) + ","
+      + ","
+      + ","
       + csv(details)
+    );
+    eventWriter.flush();
+  }
+
+  void logQuestionEvent(String eventType, GazeRegion region, GazeState state, String questionId, int questionOrderInTrial) {
+    eventWriter.println(
+      millis() + ","
+      + trialTime() + ","
+      + csv(participantId) + ","
+      + trialId + ","
+      + csv(condition) + ","
+      + csv(eventType) + ","
+      + csv(value(region)) + ","
+      + csv(value(state)) + ","
+      + csv(questionId) + ","
+      + questionOrderInTrial + ","
+      + ""
     );
     eventWriter.flush();
   }
@@ -113,5 +137,35 @@ class EventLogger {
     }
 
     return object.toString();
+  }
+
+  String createSessionId() {
+    return nf(year(), 4)
+      + nf(month(), 2)
+      + nf(day(), 2)
+      + "_"
+      + nf(hour(), 2)
+      + nf(minute(), 2)
+      + nf(second(), 2);
+  }
+
+  String safeFileName(String value) {
+    String safeValue = "";
+
+    for (int i = 0; i < value.length(); i++) {
+      char currentChar = value.charAt(i);
+
+      if ((currentChar >= 'A' && currentChar <= 'Z')
+        || (currentChar >= 'a' && currentChar <= 'z')
+        || (currentChar >= '0' && currentChar <= '9')
+        || currentChar == '-'
+        || currentChar == '_') {
+        safeValue += currentChar;
+      } else {
+        safeValue += "_";
+      }
+    }
+
+    return safeValue;
   }
 }
