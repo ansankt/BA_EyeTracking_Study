@@ -13,4 +13,8 @@ class StudyConfig {
 
   String gazeAwareCondition = "GAZE_AWARE";
   String gazeUnawareCondition = "GAZE_UNAWARE";
+
+  String gazeInputMode = "MOUSE";
+  String mouseGazeInputMode = "MOUSE";
+  String tobiiGazeInputMode = "TOBII";
 }

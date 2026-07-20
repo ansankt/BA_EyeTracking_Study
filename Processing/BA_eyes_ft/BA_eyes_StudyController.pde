@@ -38,7 +38,7 @@ void setup() {
     eyeRenderer.getEyeHeight(),
     eyeRenderer.getPupilDiameter()
   );
-  gazeInput = new MouseGazeInput(); //to test Eye Behaviour if it gets input
+  gazeInput = createGazeInput();
   gazeMapper = new GazeMapper(eyeAgent, eyeRenderer.getEyeWidth(), eyeRenderer.getEyeHeight());
   gazeTargetMapper = new GazeTargetMapper(eyeAgent);
   gazeClassifier = new GazeClassifier(eyeAgent, eyeRenderer.getPupilDiameter());
@@ -53,6 +53,14 @@ void setup() {
   eventLogger.logEvent("SESSION_START", currentGazeRegion, currentGazeState, "Mouse input test session");
 
   setupTrials();
+}
+
+GazeInput createGazeInput() {
+  if (config.gazeInputMode.equals(config.tobiiGazeInputMode)) {
+    return new TobiiGazeInput(this);
+  }
+
+  return new MouseGazeInput();
 }
 
 void draw() {
