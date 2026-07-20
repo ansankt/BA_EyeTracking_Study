@@ -14,6 +14,7 @@ int lastSampleLogTime = 0;
 int sampleLogInterval = 33;
 
 String participantId = "P_TEST";
+boolean debugMode = true;
 
 StudyPhase studyPhase = StudyPhase.INTRO;
 Trial[] trials;
@@ -80,10 +81,18 @@ void draw() {
     eyeAgent.getLeftPupilPosition(),
     eyeAgent.getRightPupilPosition()
   );
-  drawDebugInfo();
+
+  if (debugMode) {
+    drawDebugInfo();
+  }
 }
 
 void keyPressed() {
+  if (key == 'd' || key == 'D') {
+    debugMode = !debugMode;
+    eventLogger.logEvent("DEBUG_TOGGLE", currentGazeRegion, currentGazeState, "debug_mode=" + debugMode);
+  }
+
   if (key == ' ') {
     if (studyPhase == StudyPhase.INTRO) {
       startNextTrial();
@@ -96,12 +105,12 @@ void keyPressed() {
     handleQuestionEnter();
   }
 
-  if (key == '1') {
+  if (debugMode && key == '1') {
     activeEyeController = idleMovementController;
     setActiveCondition("GAZE_UNAWARE");
   }
 
-  if (key == '2') {
+  if (debugMode && key == '2') {
     activeEyeController = gazeAwareController;
     setActiveCondition("GAZE_AWARE");
   }
@@ -267,33 +276,34 @@ void drawDebugInfo() {
 
   fill(0);
   textSize(18);
-  text("Phase: " + studyPhase, 24, 34);
-  text("Condition: " + activeCondition, 24, 58);
-  text("Gaze region: " + currentGazeRegion, 24, 82);
-  text("Gaze state: " + currentGazeState, 24, 106);
+  text("Debug: ON (D toggles)", 24, 34);
+  text("Phase: " + studyPhase, 24, 58);
+  text("Condition: " + activeCondition, 24, 82);
+  text("Gaze region: " + currentGazeRegion, 24, 106);
+  text("Gaze state: " + currentGazeState, 24, 130);
 
   if (studyPhase == StudyPhase.INTRO) {
-    text("Press SPACE to start", 24, 130);
+    text("Press SPACE to start", 24, 154);
   }
 
   if (studyPhase == StudyPhase.TRIAL_RUNNING && currentTrial != null) {
-    text("Trial: " + currentTrial.id + " / " + trials.length, 24, 130);
-    text("Question: " + questionController.currentQuestionNumber() + " / " + questionController.questionCount(), 24, 154);
-    text("Question phase: " + questionController.getPhase(), 24, 178);
-    text("Current question: " + questionController.currentQuestionId(), 24, 202);
+    text("Trial: " + currentTrial.id + " / " + trials.length, 24, 154);
+    text("Question: " + questionController.currentQuestionNumber() + " / " + questionController.questionCount(), 24, 178);
+    text("Question phase: " + questionController.getPhase(), 24, 202);
+    text("Current question: " + questionController.currentQuestionId(), 24, 226);
   }
 
   if (studyPhase == StudyPhase.BREAK) {
-    text("Break", 24, 130);
-    text("Press SPACE after questionnaire", 24, 154);
+    text("Break", 24, 154);
+    text("Press SPACE after questionnaire", 24, 178);
   }
 
   if (studyPhase == StudyPhase.FINISHED) {
-    text("Finished", 24, 130);
+    text("Finished", 24, 154);
   }
 
   if (gazeBreakDetected) {
-    text("Gaze break", 24, 226);
+    text("Gaze break", 24, 250);
   }
 
   popStyle();
