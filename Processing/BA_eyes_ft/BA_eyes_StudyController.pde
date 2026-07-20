@@ -1,5 +1,6 @@
 EyeRenderer eyeRenderer;
 EyeAgent eyeAgent;
+StudyConfig config;
 GazeInput gazeInput;
 GazeMapper gazeMapper;
 GazeTargetMapper gazeTargetMapper;
@@ -11,26 +12,24 @@ GazeRegion currentGazeRegion = GazeRegion.INVALID;
 GazeState currentGazeState = GazeState.INVALID;
 boolean gazeBreakDetected = false;
 int lastSampleLogTime = 0;
-int sampleLogInterval = 33;
-
-String participantId = "P_TEST";
-boolean debugMode = true;
 
 StudyPhase studyPhase = StudyPhase.INTRO;
 Trial[] trials;
 int currentTrialIndex = -1;
 Trial currentTrial;
 int breakStartTime = 0;
-int breakDuration = 2500;
 
 EyeController activeEyeController;
 IdleMovementController idleMovementController;
 GazeAwareController gazeAwareController;
-String activeCondition = "GAZE_AWARE";
+String activeCondition = "";
 
 void setup() {
   //size(800, 800);
   fullScreen();
+  config = new StudyConfig();
+  activeCondition = config.gazeAwareCondition;
+
   eyeRenderer = new EyeRenderer();
   eyeAgent = new EyeAgent(
     eyeRenderer.getLeftEyeCenter(),
@@ -43,14 +42,14 @@ void setup() {
   gazeMapper = new GazeMapper(eyeAgent, eyeRenderer.getEyeWidth(), eyeRenderer.getEyeHeight());
   gazeTargetMapper = new GazeTargetMapper(eyeAgent);
   gazeClassifier = new GazeClassifier(eyeAgent, eyeRenderer.getPupilDiameter());
-  eventLogger = new EventLogger(participantId);
+  eventLogger = new EventLogger(config.participantId);
 
   idleMovementController = new IdleMovementController(eyeAgent);
   gazeAwareController = new GazeAwareController(eyeAgent, gazeInput, gazeTargetMapper);
 
   // activeEyeController = idleMovementController;
   activeEyeController = gazeAwareController;
-  eventLogger.setContext(participantId, 0, activeCondition);
+  eventLogger.setContext(config.participantId, 0, activeCondition);
   eventLogger.logEvent("SESSION_START", currentGazeRegion, currentGazeState, "Mouse input test session");
 
   setupTrials();
@@ -82,15 +81,15 @@ void draw() {
     eyeAgent.getRightPupilPosition()
   );
 
-  if (debugMode) {
+  if (config.debugMode) {
     drawDebugInfo();
   }
 }
 
 void keyPressed() {
   if (key == 'd' || key == 'D') {
-    debugMode = !debugMode;
-    eventLogger.logEvent("DEBUG_TOGGLE", currentGazeRegion, currentGazeState, "debug_mode=" + debugMode);
+    config.debugMode = !config.debugMode;
+    eventLogger.logEvent("DEBUG_TOGGLE", currentGazeRegion, currentGazeState, "debug_mode=" + config.debugMode);
   }
 
   if (key == ' ') {
@@ -105,33 +104,36 @@ void keyPressed() {
     handleQuestionEnter();
   }
 
-  if (debugMode && key == '1') {
+  if (config.debugMode && key == '1') {
     activeEyeController = idleMovementController;
-    setActiveCondition("GAZE_UNAWARE");
+    setActiveCondition(config.gazeUnawareCondition);
   }
 
-  if (debugMode && key == '2') {
+  if (config.debugMode && key == '2') {
     activeEyeController = gazeAwareController;
-    setActiveCondition("GAZE_AWARE");
+    setActiveCondition(config.gazeAwareCondition);
   }
 }
 
 void setupTrials() { //initializes counterbalanced Order
-  String[] conditions = counterbalancedConditions(participantId);
+  String[] conditions = counterbalancedConditions(config.participantId);
   Question[] shuffledQuestions = shuffledQuestions();
   trials = new Trial[conditions.length];
 
   for (int i = 0; i < conditions.length; i++) {
-    trials[i] = new Trial(i + 1, conditions[i], questionsForTrial(shuffledQuestions, i, 5));
+    trials[i] = new Trial(i + 1, conditions[i], questionsForTrial(shuffledQuestions, i, config.questionsPerTrial));
   }
 }
 
 Question[] shuffledQuestions() {
-  Question[] questions = new Question[10];
+  Question[] questions = new Question[config.totalQuestionCount];
 
   for (int i = 0; i < questions.length; i++) {
     int questionNumber = i + 1;
-    questions[i] = new Question("Q" + nf(questionNumber, 2), sketchPath("questions/question_" + questionNumber + ".mp3"));
+    questions[i] = new Question(
+      "Q" + nf(questionNumber, 2),
+      sketchPath(config.questionDirectory + "/" + config.questionFilePrefix + questionNumber + config.questionFileExtension)
+    );
   }
 
   for (int i = questions.length - 1; i > 0; i--) {
@@ -157,10 +159,10 @@ Question[] questionsForTrial(Question[] shuffledQuestions, int trialIndex, int q
 
 String[] counterbalancedConditions(String participantId) {
   if (participantIdIsEven(participantId)) {
-    return new String[] { "GAZE_AWARE", "GAZE_UNAWARE" };
+    return new String[] { config.gazeAwareCondition, config.gazeUnawareCondition };
   }
 
-  return new String[] { "GAZE_UNAWARE", "GAZE_AWARE" };
+  return new String[] { config.gazeUnawareCondition, config.gazeAwareCondition };
 }
 
 boolean participantIdIsEven(String participantId) {
@@ -241,11 +243,11 @@ void setActiveCondition(String condition) {
 }
 
 void applyActiveControllerForCondition(String condition) {
-  if (condition.equals("GAZE_UNAWARE")) {
+  if (condition.equals(config.gazeUnawareCondition)) {
     activeEyeController = idleMovementController;
   }
 
-  if (condition.equals("GAZE_AWARE")) {
+  if (condition.equals(config.gazeAwareCondition)) {
     activeEyeController = gazeAwareController;
   }
 }
@@ -259,7 +261,7 @@ void logCurrentFrame() {
     eventLogger.logEvent("GAZE_BREAK", currentGazeRegion, currentGazeState, "");
   }
 
-  if (millis() - lastSampleLogTime >= sampleLogInterval) {
+  if (millis() - lastSampleLogTime >= config.sampleLogInterval) {
     eventLogger.logSample(currentGazeSample, currentGazeRegion, currentGazeState, eyeAgent);
     lastSampleLogTime = millis();
   }
