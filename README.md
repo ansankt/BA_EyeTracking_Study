@@ -11,3 +11,7 @@ My Programming work for my Bachelor thesis about Eyetracking
 |            |                                                          |
 |            |                                                          |
 |            |                                                          |
+
+
+#Dependencies
+Usign gazetrack[https://github.com/AugustoEst/gazetrack/tree/master] from Augusto Est
