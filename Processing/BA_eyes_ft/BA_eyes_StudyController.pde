@@ -10,7 +10,7 @@ QuestionController questionController;
 GazeSample currentGazeSample;
 GazeRegion currentGazeRegion = GazeRegion.INVALID;
 GazeState currentGazeState = GazeState.INVALID;
-boolean gazeBreakDetected = false;
+boolean mutualGazeEnded = false;
 int lastSampleLogTime = 0;
 
 StudyPhase studyPhase = StudyPhase.INTRO;
@@ -38,14 +38,14 @@ void setup() {
     eyeRenderer.getEyeHeight(),
     eyeRenderer.getPupilDiameter()
   );
-  gazeInput = new MouseGazeInput(); //to test Eye Behaviour if it gets input
+  gazeInput = createGazeInput();
   gazeMapper = new GazeMapper(eyeAgent, eyeRenderer.getEyeWidth(), eyeRenderer.getEyeHeight());
   gazeTargetMapper = new GazeTargetMapper(eyeAgent);
   gazeClassifier = new GazeClassifier(eyeAgent, eyeRenderer.getPupilDiameter());
   eventLogger = new EventLogger(config.participantId);
 
   idleMovementController = new IdleMovementController(eyeAgent);
-  gazeAwareController = new GazeAwareController(eyeAgent, gazeInput, gazeTargetMapper);
+  gazeAwareController = new GazeAwareController(eyeAgent, config, eventLogger);
 
   // activeEyeController = idleMovementController;
   activeEyeController = gazeAwareController;
@@ -55,6 +55,14 @@ void setup() {
   setupTrials();
 }
 
+GazeInput createGazeInput() {
+  if (config.gazeInputMode.equals(config.tobiiGazeInputMode)) {
+    return new TobiiGazeInput(this);
+  }
+
+  return new MouseGazeInput();
+}
+
 void draw() {
   currentGazeSample = gazeInput.getCurrentSample();
   currentGazeRegion = gazeMapper.map(currentGazeSample);
@@ -62,14 +70,14 @@ void draw() {
   updateStudyFlow();
 
   if (studyPhase == StudyPhase.TRIAL_RUNNING) {
-    activeEyeController.update();
+    activeEyeController.update(currentGazeRegion, currentGazeSample);
     eyeAgent.update();
     questionController.update();
   }
 
   gazeClassifier.update(currentGazeRegion, currentGazeSample);
   currentGazeState = gazeClassifier.getStableState();
-  gazeBreakDetected = gazeClassifier.hasGazeBreakDetected();
+  mutualGazeEnded = gazeClassifier.hasMutualGazeEnded();
 
   if (studyPhase == StudyPhase.TRIAL_RUNNING) {
     logCurrentFrame();
@@ -248,6 +256,7 @@ void applyActiveControllerForCondition(String condition) {
   }
 
   if (condition.equals(config.gazeAwareCondition)) {
+    gazeAwareController.resetToRandomGaze();
     activeEyeController = gazeAwareController;
   }
 }
@@ -257,8 +266,8 @@ void logCurrentFrame() {
     eventLogger.logEvent("GAZE_STATE_CHANGE", currentGazeRegion, currentGazeState, "");
   }
 
-  if (gazeBreakDetected) {
-    eventLogger.logEvent("GAZE_BREAK", currentGazeRegion, currentGazeState, "");
+  if (mutualGazeEnded) {
+    eventLogger.logEvent("MUTUAL_GAZE_ENDED", currentGazeRegion, currentGazeState, "");
   }
 
   if (millis() - lastSampleLogTime >= config.sampleLogInterval) {
@@ -283,29 +292,30 @@ void drawDebugInfo() {
   text("Condition: " + activeCondition, 24, 82);
   text("Gaze region: " + currentGazeRegion, 24, 106);
   text("Gaze state: " + currentGazeState, 24, 130);
+  text("Aware mode: " + gazeAwareController.getMode(), 24, 154);
 
   if (studyPhase == StudyPhase.INTRO) {
-    text("Press SPACE to start", 24, 154);
+    text("Press SPACE to start", 24, 178);
   }
 
   if (studyPhase == StudyPhase.TRIAL_RUNNING && currentTrial != null) {
-    text("Trial: " + currentTrial.id + " / " + trials.length, 24, 154);
-    text("Question: " + questionController.currentQuestionNumber() + " / " + questionController.questionCount(), 24, 178);
-    text("Question phase: " + questionController.getPhase(), 24, 202);
-    text("Current question: " + questionController.currentQuestionId(), 24, 226);
+    text("Trial: " + currentTrial.id + " / " + trials.length, 24, 178);
+    text("Question: " + questionController.currentQuestionNumber() + " / " + questionController.questionCount(), 24, 202);
+    text("Question phase: " + questionController.getPhase(), 24, 226);
+    text("Current question: " + questionController.currentQuestionId(), 24, 250);
   }
 
   if (studyPhase == StudyPhase.BREAK) {
-    text("Break", 24, 154);
-    text("Press SPACE after questionnaire", 24, 178);
+    text("Break", 24, 178);
+    text("Press SPACE after questionnaire", 24, 202);
   }
 
   if (studyPhase == StudyPhase.FINISHED) {
-    text("Finished", 24, 154);
+    text("Finished", 24, 178);
   }
 
-  if (gazeBreakDetected) {
-    text("Gaze break", 24, 250);
+  if (mutualGazeEnded) {
+    text("Mutual gaze ended", 24, 274);
   }
 
   popStyle();
