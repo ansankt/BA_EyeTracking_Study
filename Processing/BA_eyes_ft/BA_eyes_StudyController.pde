@@ -30,7 +30,7 @@ void setup() {
   config = new StudyConfig();
   activeCondition = config.gazeAwareCondition;
 
-  eyeRenderer = new EyeRenderer();
+  eyeRenderer = new EyeRenderer(config);
   eyeAgent = new EyeAgent(
     eyeRenderer.getLeftEyeCenter(),
     eyeRenderer.getRightEyeCenter(),
@@ -293,6 +293,7 @@ void drawDebugInfo() {
   text("Gaze region: " + currentGazeRegion, 24, 106);
   text("Gaze state: " + currentGazeState, 24, 130);
   text("Aware mode: " + gazeAwareController.getMode(), 24, 154);
+  text("Eye size: " + nf(config.eyeWidthDeg, 0, 1) + " x " + nf(config.eyeHeightDeg, 0, 1) + " deg", 24, 274);
 
   if (studyPhase == StudyPhase.INTRO) {
     text("Press SPACE to start", 24, 178);
@@ -315,7 +316,7 @@ void drawDebugInfo() {
   }
 
   if (mutualGazeEnded) {
-    text("Mutual gaze ended", 24, 274);
+    text("Mutual gaze ended", 24, 298);
   }
 
   popStyle();

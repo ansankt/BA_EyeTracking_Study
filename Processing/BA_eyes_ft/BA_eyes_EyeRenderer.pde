@@ -1,13 +1,29 @@
 class EyeRenderer {
+  StudyConfig config;
+  VisualAngleConverter angleConverter;
+
   final int backgroundColor = 255;
 
-  final float pupilDiameter = 75;
-  final float eyeWidth = 250;
-  final float eyeHeight = 400;
-  final float eyeDistance = 300;
+  float pupilDiameter;
+  float eyeWidth;
+  float eyeHeight;
+  float eyeDistance;
 
-  final PVector leftEyeCenter = new PVector(displayWidth/2-(eyeDistance/2), displayHeight/2);
-  final PVector rightEyeCenter = new PVector(leftEyeCenter.x + eyeDistance, leftEyeCenter.y);
+  PVector leftEyeCenter;
+  PVector rightEyeCenter;
+
+  EyeRenderer(StudyConfig config) {
+    this.config = config;
+    angleConverter = new VisualAngleConverter(config);
+
+    eyeWidth = angleConverter.degToPxX(config.eyeWidthDeg);
+    eyeHeight = angleConverter.degToPxY(config.eyeHeightDeg);
+    eyeDistance = angleConverter.degToPxX(config.eyeDistanceDeg);
+    pupilDiameter = angleConverter.degToPxX(config.pupilDiameterDeg);
+
+    leftEyeCenter = new PVector(width / 2 - (eyeDistance / 2), height / 2);
+    rightEyeCenter = new PVector(leftEyeCenter.x + eyeDistance, leftEyeCenter.y);
+  }
 
   void clear() {
     background(backgroundColor);
@@ -22,7 +38,7 @@ class EyeRenderer {
 
     noFill();
     stroke(0);
-    strokeWeight(4);
+    strokeWeight(config.eyeStrokeWeight);
     ellipse(leftEyeCenter.x, leftEyeCenter.y, eyeWidth, eyeHeight);
     ellipse(rightEyeCenter.x, rightEyeCenter.y, eyeWidth, eyeHeight);
 
@@ -47,6 +63,10 @@ class EyeRenderer {
 
   float getEyeHeight() {
     return eyeHeight;
+  }
+
+  float getEyeDistance() {
+    return eyeDistance;
   }
 
   PVector getLeftEyeCenter() {
