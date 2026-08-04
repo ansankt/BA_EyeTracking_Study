@@ -147,6 +147,10 @@ class MicrophoneAnswerController {
     return speechThreshold;
   }
 
+  boolean hasValidSignal() {
+    return maxNoise > config.minimumValidMicSignalLevel;
+  }
+
   boolean isSpeechDetected() {
     return speechDetected;
   }

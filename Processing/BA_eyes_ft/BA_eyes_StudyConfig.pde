@@ -10,6 +10,7 @@ class StudyConfig {
   boolean printSoundDevicesOnStart = true;
   int microphoneInputDevice = -1;
   float microphoneGain = 1.0;
+  float minimumValidMicSignalLevel = 0.0001;
   int micCalibrationDurationMs = 2000;
   int silenceToCompleteAnswerMs = 1000;
   int minSpeechDurationMs = 200;

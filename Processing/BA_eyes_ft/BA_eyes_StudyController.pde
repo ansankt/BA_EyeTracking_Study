@@ -213,6 +213,11 @@ void updateStudyFlow() {
           + ";max_noise=" + microphoneAnswerController.getMaxNoise()
           + ";speech_threshold=" + microphoneAnswerController.getSpeechThreshold()
       );
+
+      if (!microphoneAnswerController.hasValidSignal()) {
+        eventLogger.logEvent("MIC_SIGNAL_WARNING", currentGazeRegion, currentGazeState, "No microphone signal detected during calibration");
+      }
+
       startNextTrial();
     }
   }
@@ -364,11 +369,18 @@ void drawDebugInfo() {
     text("Speech threshold: " + nf(microphoneAnswerController.getSpeechThreshold(), 0, 4), 24, 394);
     text("Speech detected: " + microphoneAnswerController.isSpeechDetected(), 24, 418);
     text("Mic device: " + config.microphoneInputDevice + "  Gain: " + nf(config.microphoneGain, 0, 1), 24, 442);
+
+    if (microphoneAnswerController.isCalibrationComplete() && !microphoneAnswerController.hasValidSignal()) {
+      fill(180, 0, 0);
+      text("Warning: no microphone signal detected", 24, 466);
+      fill(0);
+    }
   }
 
   if (studyPhase == StudyPhase.BREAK) {
-    text("Break", 24, 202);
-    text("Press SPACE after questionnaire", 24, 226);
+    text("Trial completed", 24, 202);
+    text("Please complete the questionnaire", 24, 226);
+    text("Press SPACE to continue", 24, 250);
   }
 
   if (studyPhase == StudyPhase.FINISHED) {
