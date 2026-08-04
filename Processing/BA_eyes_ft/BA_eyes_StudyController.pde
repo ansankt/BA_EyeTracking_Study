@@ -30,7 +30,7 @@ void setup() {
   config = new StudyConfig();
   activeCondition = config.gazeAwareCondition;
 
-  eyeRenderer = new EyeRenderer();
+  eyeRenderer = new EyeRenderer(config);
   eyeAgent = new EyeAgent(
     eyeRenderer.getLeftEyeCenter(),
     eyeRenderer.getRightEyeCenter(),
@@ -39,13 +39,13 @@ void setup() {
     eyeRenderer.getPupilDiameter()
   );
   gazeInput = createGazeInput();
-  gazeMapper = new GazeMapper(eyeAgent, eyeRenderer.getEyeWidth(), eyeRenderer.getEyeHeight());
+  gazeMapper = new GazeMapper(eyeAgent, eyeRenderer.getEyeWidth(), eyeRenderer.getEyeHeight(), config);
   gazeTargetMapper = new GazeTargetMapper(eyeAgent);
-  gazeClassifier = new GazeClassifier(eyeAgent, eyeRenderer.getPupilDiameter());
+  gazeClassifier = new GazeClassifier(eyeAgent, eyeRenderer.getPupilDiameter(), gazeMapper);
   eventLogger = new EventLogger(config.participantId);
 
   idleMovementController = new IdleMovementController(eyeAgent);
-  gazeAwareController = new GazeAwareController(eyeAgent, config, eventLogger);
+  gazeAwareController = new GazeAwareController(eyeAgent, config, eventLogger, gazeMapper);
 
   // activeEyeController = idleMovementController;
   activeEyeController = gazeAwareController;
@@ -90,6 +90,7 @@ void draw() {
   );
 
   if (config.debugMode) {
+    drawMutualGazeAreaDebug();
     drawDebugInfo();
   }
 }
@@ -271,7 +272,13 @@ void logCurrentFrame() {
   }
 
   if (millis() - lastSampleLogTime >= config.sampleLogInterval) {
-    eventLogger.logSample(currentGazeSample, currentGazeRegion, currentGazeState, eyeAgent);
+    eventLogger.logSample(
+      currentGazeSample,
+      currentGazeRegion,
+      currentGazeState,
+      gazeMapper.isInsideMutualGazeArea(currentGazeSample),
+      eyeAgent
+    );
     lastSampleLogTime = millis();
   }
 }
@@ -293,30 +300,45 @@ void drawDebugInfo() {
   text("Gaze region: " + currentGazeRegion, 24, 106);
   text("Gaze state: " + currentGazeState, 24, 130);
   text("Aware mode: " + gazeAwareController.getMode(), 24, 154);
+  text("In mutual gaze area: " + gazeMapper.isInsideMutualGazeArea(currentGazeSample), 24, 178);
+  text("Eye size: " + nf(config.eyeWidthDeg, 0, 1) + " x " + nf(config.eyeHeightDeg, 0, 1) + " deg", 24, 298);
+  text("Mutual area: " + nf(config.mutualGazeAreaWidthDeg, 0, 1) + " x " + nf(config.mutualGazeAreaHeightDeg, 0, 1) + " deg", 24, 322);
 
   if (studyPhase == StudyPhase.INTRO) {
-    text("Press SPACE to start", 24, 178);
+    text("Press SPACE to start", 24, 202);
   }
 
   if (studyPhase == StudyPhase.TRIAL_RUNNING && currentTrial != null) {
-    text("Trial: " + currentTrial.id + " / " + trials.length, 24, 178);
-    text("Question: " + questionController.currentQuestionNumber() + " / " + questionController.questionCount(), 24, 202);
-    text("Question phase: " + questionController.getPhase(), 24, 226);
-    text("Current question: " + questionController.currentQuestionId(), 24, 250);
+    text("Trial: " + currentTrial.id + " / " + trials.length, 24, 202);
+    text("Question: " + questionController.currentQuestionNumber() + " / " + questionController.questionCount(), 24, 226);
+    text("Question phase: " + questionController.getPhase(), 24, 250);
+    text("Current question: " + questionController.currentQuestionId(), 24, 274);
   }
 
   if (studyPhase == StudyPhase.BREAK) {
-    text("Break", 24, 178);
-    text("Press SPACE after questionnaire", 24, 202);
+    text("Break", 24, 202);
+    text("Press SPACE after questionnaire", 24, 226);
   }
 
   if (studyPhase == StudyPhase.FINISHED) {
-    text("Finished", 24, 178);
+    text("Finished", 24, 202);
   }
 
   if (mutualGazeEnded) {
-    text("Mutual gaze ended", 24, 274);
+    text("Mutual gaze ended", 24, 346);
   }
 
+  popStyle();
+}
+
+void drawMutualGazeAreaDebug() {
+  float[] area = gazeMapper.mutualGazeAreaBounds();
+
+  pushStyle();
+  noFill();
+  stroke(255, 0, 0);
+  strokeWeight(2);
+  rectMode(CORNERS);
+  rect(area[0], area[2], area[1], area[3]);
   popStyle();
 }

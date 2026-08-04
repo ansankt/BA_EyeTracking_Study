@@ -18,12 +18,25 @@ class StudyConfig {
   String mouseGazeInputMode = "MOUSE";
   String tobiiGazeInputMode = "TOBII";
 
+  float screenWidthCm = 34.5;
+  float screenHeightCm = 19.4;
+  float viewingDistanceCm = 60.0;
+
+  float eyeWidthDeg = 4.0;
+  float eyeHeightDeg = 6.0;
+  float eyeDistanceDeg = 5.0;
+  float pupilDiameterDeg = 1.0;
+  float eyeStrokeWeight = 4.0;
+
+  float mutualGazeAreaWidthDeg = 8.0;
+  float mutualGazeAreaHeightDeg = 5.0;
+  float mutualGazeAreaYOffsetDeg = 0.0;
+
   int lookingAtEyesToMutualGazeMs = 300;
   int lostGazeToRandomMs = 200;
   int maxMutualGazeDurationMs = 3600;
   int gazeBreakDurationMs = 1250;
 
-  float gazeAwareMutualTriggerEyeScale = 0.45;
   float gazeAwareMutualGazeSpeed = 6.0;
   float gazeAwareBreakSpeed = 5.0;
 }
