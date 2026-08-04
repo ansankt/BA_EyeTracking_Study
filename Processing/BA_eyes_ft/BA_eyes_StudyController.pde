@@ -39,13 +39,13 @@ void setup() {
     eyeRenderer.getPupilDiameter()
   );
   gazeInput = createGazeInput();
-  gazeMapper = new GazeMapper(eyeAgent, eyeRenderer.getEyeWidth(), eyeRenderer.getEyeHeight());
+  gazeMapper = new GazeMapper(eyeAgent, eyeRenderer.getEyeWidth(), eyeRenderer.getEyeHeight(), config);
   gazeTargetMapper = new GazeTargetMapper(eyeAgent);
-  gazeClassifier = new GazeClassifier(eyeAgent, eyeRenderer.getPupilDiameter());
+  gazeClassifier = new GazeClassifier(eyeAgent, eyeRenderer.getPupilDiameter(), gazeMapper);
   eventLogger = new EventLogger(config.participantId);
 
   idleMovementController = new IdleMovementController(eyeAgent);
-  gazeAwareController = new GazeAwareController(eyeAgent, config, eventLogger);
+  gazeAwareController = new GazeAwareController(eyeAgent, config, eventLogger, gazeMapper);
 
   // activeEyeController = idleMovementController;
   activeEyeController = gazeAwareController;
@@ -90,6 +90,7 @@ void draw() {
   );
 
   if (config.debugMode) {
+    drawMutualGazeAreaDebug();
     drawDebugInfo();
   }
 }
@@ -319,5 +320,17 @@ void drawDebugInfo() {
     text("Mutual gaze ended", 24, 298);
   }
 
+  popStyle();
+}
+
+void drawMutualGazeAreaDebug() {
+  float[] area = gazeMapper.mutualGazeAreaBounds();
+
+  pushStyle();
+  noFill();
+  stroke(255, 0, 0);
+  strokeWeight(2);
+  rectMode(CORNERS);
+  rect(area[0], area[2], area[1], area[3]);
   popStyle();
 }

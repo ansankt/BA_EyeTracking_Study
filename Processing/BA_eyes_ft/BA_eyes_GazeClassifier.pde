@@ -13,9 +13,11 @@ class GazeClassifier {
   boolean mutualGazeEnded = false;
 
   EyeAgent eyeAgent;
+  GazeMapper gazeMapper;
 
-  GazeClassifier(EyeAgent eyeAgent, float pupilDiameter) {
+  GazeClassifier(EyeAgent eyeAgent, float pupilDiameter, GazeMapper gazeMapper) {
     this.eyeAgent = eyeAgent;
+    this.gazeMapper = gazeMapper;
     pupilHitRadius = pupilDiameter / 2;
     candidateSince = millis();
     lastStateChangeTime = millis();
@@ -45,11 +47,15 @@ class GazeClassifier {
   }
 
   GazeState mapRegionToState(GazeRegion region, GazeSample sample) {
-    if (region == GazeRegion.LEFT_EYE || region == GazeRegion.RIGHT_EYE) {
-      if (sampleHitsCurrentPupil(region, sample) && agentLooksAtUser()) {
+    if (gazeMapper.isInsideMutualGazeArea(sample)) {
+      if (agentLooksAtUser()) {
         return GazeState.MUTUAL_GAZE;
       }
 
+      return GazeState.LOOKING_AT_EYES;
+    }
+
+    if (region == GazeRegion.LEFT_EYE || region == GazeRegion.RIGHT_EYE) {
       return GazeState.LOOKING_AT_EYES;
     }
 

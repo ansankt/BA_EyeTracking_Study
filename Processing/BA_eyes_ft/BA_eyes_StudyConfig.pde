@@ -28,12 +28,15 @@ class StudyConfig {
   float pupilDiameterDeg = 1.0;
   float eyeStrokeWeight = 4.0;
 
+  float mutualGazeAreaHorizontalPaddingDeg = 0.5;
+  float mutualGazeAreaHeightDeg = 2.0;
+  float mutualGazeAreaYOffsetDeg = 0.0;
+
   int lookingAtEyesToMutualGazeMs = 300;
   int lostGazeToRandomMs = 200;
   int maxMutualGazeDurationMs = 3600;
   int gazeBreakDurationMs = 1250;
 
-  float gazeAwareMutualTriggerEyeScale = 0.45;
   float gazeAwareMutualGazeSpeed = 6.0;
   float gazeAwareBreakSpeed = 5.0;
 }
