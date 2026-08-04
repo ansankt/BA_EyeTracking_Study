@@ -7,6 +7,7 @@ GazeTargetMapper gazeTargetMapper;
 GazeClassifier gazeClassifier;
 EventLogger eventLogger;
 QuestionController questionController;
+MicrophoneAnswerController microphoneAnswerController;
 GazeSample currentGazeSample;
 GazeRegion currentGazeRegion = GazeRegion.INVALID;
 GazeState currentGazeState = GazeState.INVALID;
@@ -43,6 +44,7 @@ void setup() {
   gazeTargetMapper = new GazeTargetMapper(eyeAgent);
   gazeClassifier = new GazeClassifier(eyeAgent, eyeRenderer.getPupilDiameter(), gazeMapper);
   eventLogger = new EventLogger(config.participantId);
+  microphoneAnswerController = new MicrophoneAnswerController(this, config);
 
   idleMovementController = new IdleMovementController(eyeAgent);
   gazeAwareController = new GazeAwareController(eyeAgent, config, eventLogger, gazeMapper);
@@ -103,7 +105,7 @@ void keyPressed() {
 
   if (key == ' ') {
     if (studyPhase == StudyPhase.INTRO) {
-      startNextTrial();
+      startStudyAfterIntro();
     } else if (studyPhase == StudyPhase.BREAK) {
       startNextTrial();
     }
@@ -193,9 +195,40 @@ boolean participantIdIsEven(String participantId) {
 }
 
 void updateStudyFlow() {
+  if (studyPhase == StudyPhase.MIC_CALIBRATION) {
+    microphoneAnswerController.updateCalibration();
+
+    if (microphoneAnswerController.isCalibrationComplete()) {
+      eventLogger.logEvent(
+        "MIC_CALIBRATION_END",
+        currentGazeRegion,
+        currentGazeState,
+        "mean_noise=" + microphoneAnswerController.getMeanNoise()
+          + ";max_noise=" + microphoneAnswerController.getMaxNoise()
+          + ";speech_threshold=" + microphoneAnswerController.getSpeechThreshold()
+      );
+      startNextTrial();
+    }
+  }
+
   if (studyPhase == StudyPhase.TRIAL_RUNNING && questionController.isComplete()) {
     endCurrentTrial();
   }
+}
+
+void startStudyAfterIntro() {
+  if (config.useMicrophoneAnswerAdvance) {
+    startMicrophoneCalibration();
+    return;
+  }
+
+  startNextTrial();
+}
+
+void startMicrophoneCalibration() {
+  studyPhase = StudyPhase.MIC_CALIBRATION;
+  microphoneAnswerController.startCalibration();
+  eventLogger.logEvent("MIC_CALIBRATION_START", currentGazeRegion, currentGazeState, "duration_ms=" + config.micCalibrationDurationMs);
 }
 
 void startNextTrial() {
@@ -211,7 +244,7 @@ void startNextTrial() {
 
   setActiveCondition(currentTrial.condition);
   eventLogger.startTrial(currentTrial.id, currentTrial.condition);
-  questionController = new QuestionController(this, currentTrial.questions, eventLogger);
+  questionController = new QuestionController(this, currentTrial.questions, eventLogger, config, microphoneAnswerController);
   eventLogger.logEvent("TRIAL_START", currentGazeRegion, currentGazeState, "question_count=" + currentTrial.questions.length);
 }
 
@@ -308,11 +341,22 @@ void drawDebugInfo() {
     text("Press SPACE to start", 24, 202);
   }
 
+  if (studyPhase == StudyPhase.MIC_CALIBRATION) {
+    text("Mic calibration", 24, 202);
+    text("Please stay silent", 24, 226);
+  }
+
   if (studyPhase == StudyPhase.TRIAL_RUNNING && currentTrial != null) {
     text("Trial: " + currentTrial.id + " / " + trials.length, 24, 202);
     text("Question: " + questionController.currentQuestionNumber() + " / " + questionController.questionCount(), 24, 226);
     text("Question phase: " + questionController.getPhase(), 24, 250);
     text("Current question: " + questionController.currentQuestionId(), 24, 274);
+  }
+
+  if (config.useMicrophoneAnswerAdvance) {
+    text("Mic level: " + nf(microphoneAnswerController.getCurrentLevel(), 0, 4), 24, 370);
+    text("Speech threshold: " + nf(microphoneAnswerController.getSpeechThreshold(), 0, 4), 24, 394);
+    text("Speech detected: " + microphoneAnswerController.isSpeechDetected(), 24, 418);
   }
 
   if (studyPhase == StudyPhase.BREAK) {

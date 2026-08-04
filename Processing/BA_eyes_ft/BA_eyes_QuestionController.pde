@@ -1,6 +1,8 @@
 class QuestionController {
   PApplet parent;
+  StudyConfig config;
   EventLogger eventLogger;
+  MicrophoneAnswerController microphoneAnswerController;
   processing.sound.SoundFile currentAudio;
 
   Question[] questions;
@@ -12,13 +14,20 @@ class QuestionController {
   int phaseStartTime = 0;
   int answerLockoutAfterAudioMs = 2000;
 
-  QuestionController(PApplet parent, Question[] questions, EventLogger eventLogger) {
+  QuestionController(PApplet parent, Question[] questions, EventLogger eventLogger, StudyConfig config, MicrophoneAnswerController microphoneAnswerController) {
     this.parent = parent;
     this.questions = questions;
     this.eventLogger = eventLogger;
+    this.config = config;
+    this.microphoneAnswerController = microphoneAnswerController;
   }
 
   void update() {
+    if (phase == QuestionPhase.READY_TO_START && config.useMicrophoneAnswerAdvance) {
+      startNextQuestion();
+      return;
+    }
+
     if (phase == QuestionPhase.PLAYING_AUDIO && currentAudio != null && !currentAudio.isPlaying()) {
       phase = QuestionPhase.ANSWER_LOCKED;
       phaseStartTime = millis();
@@ -28,6 +37,18 @@ class QuestionController {
     if (phase == QuestionPhase.ANSWER_LOCKED && millis() - phaseStartTime >= answerLockoutAfterAudioMs) {
       phase = QuestionPhase.WAITING_FOR_ANSWER;
       logQuestionEvent("QUESTION_ANSWER_ENABLED");
+
+      if (config.useMicrophoneAnswerAdvance) {
+        microphoneAnswerController.startAnswerDetection();
+      }
+    }
+
+    if (phase == QuestionPhase.WAITING_FOR_ANSWER && config.useMicrophoneAnswerAdvance) {
+      microphoneAnswerController.updateAnswerDetection();
+
+      if (microphoneAnswerController.hasAnswerFinished()) {
+        completeCurrentQuestion();
+      }
     }
   }
 
