@@ -28,8 +28,8 @@ class StudyConfig {
   float pupilDiameterDeg = 1.0;
   float eyeStrokeWeight = 4.0;
 
-  float mutualGazeAreaHorizontalPaddingDeg = 0.5;
-  float mutualGazeAreaHeightDeg = 2.0;
+  float mutualGazeAreaWidthDeg = 8.0;
+  float mutualGazeAreaHeightDeg = 5.0;
   float mutualGazeAreaYOffsetDeg = 0.0;
 
   int lookingAtEyesToMutualGazeMs = 300;

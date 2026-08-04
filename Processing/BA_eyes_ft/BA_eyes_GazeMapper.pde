@@ -79,15 +79,14 @@ class GazeMapper {
   }
 
   float[] mutualGazeAreaBounds() {
-    PVector leftEyeCenter = eyeAgent.getLeftEyeCenter();
-    PVector rightEyeCenter = eyeAgent.getRightEyeCenter();
+    PVector faceCenter = eyeAgent.getFaceCenter();
 
-    float horizontalPadding = angleConverter.degToPxX(config.mutualGazeAreaHorizontalPaddingDeg);
+    float areaWidth = angleConverter.degToPxX(config.mutualGazeAreaWidthDeg);
     float areaHeight = angleConverter.degToPxY(config.mutualGazeAreaHeightDeg);
-    float centerY = leftEyeCenter.y + angleConverter.degToPxY(config.mutualGazeAreaYOffsetDeg);
+    float centerY = faceCenter.y + angleConverter.degToPxY(config.mutualGazeAreaYOffsetDeg);
 
-    float left = leftEyeCenter.x - eyeRadiusX - horizontalPadding;
-    float right = rightEyeCenter.x + eyeRadiusX + horizontalPadding;
+    float left = faceCenter.x - areaWidth / 2;
+    float right = faceCenter.x + areaWidth / 2;
     float top = centerY - areaHeight / 2;
     float bottom = centerY + areaHeight / 2;
 

@@ -20,7 +20,7 @@ class EventLogger {
     sampleWriter = createWriter(dataDirectory.getAbsolutePath() + "/" + filePrefix + "_samples.csv");
 
     eventWriter.println("timestamp_ms,trial_time_ms,participant_id,trial_id,condition,event_type,gaze_region,gaze_state,question_id,question_order_in_trial,details");
-    sampleWriter.println("timestamp_ms,trial_time_ms,participant_id,trial_id,condition,gaze_x,gaze_y,gaze_valid,gaze_region,gaze_state,left_pupil_x,left_pupil_y,right_pupil_x,right_pupil_y");
+    sampleWriter.println("timestamp_ms,trial_time_ms,participant_id,trial_id,condition,gaze_x,gaze_y,gaze_valid,gaze_region,gaze_state,in_mutual_gaze_area,left_pupil_x,left_pupil_y,right_pupil_x,right_pupil_y");
 
     flush();
   }
@@ -76,7 +76,7 @@ class EventLogger {
     eventWriter.flush();
   }
 
-  void logSample(GazeSample sample, GazeRegion region, GazeState state, EyeAgent eyeAgent) {
+  void logSample(GazeSample sample, GazeRegion region, GazeState state, boolean inMutualGazeArea, EyeAgent eyeAgent) {
     PVector leftPupil = eyeAgent.getLeftPupilPosition();
     PVector rightPupil = eyeAgent.getRightPupilPosition();
 
@@ -95,6 +95,7 @@ class EventLogger {
       + gazeValid + ","
       + csv(value(region)) + ","
       + csv(value(state)) + ","
+      + inMutualGazeArea + ","
       + leftPupil.x + ","
       + leftPupil.y + ","
       + rightPupil.x + ","
