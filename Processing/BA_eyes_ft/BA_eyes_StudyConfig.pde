@@ -7,6 +7,9 @@ class StudyConfig {
   int sampleLogInterval = 33;
   int breakDuration = 2500;
   boolean useMicrophoneAnswerAdvance = true;
+  boolean printSoundDevicesOnStart = true;
+  int microphoneInputDevice = -1;
+  float microphoneGain = 1.0;
   int micCalibrationDurationMs = 2000;
   int silenceToCompleteAnswerMs = 1000;
   int minSpeechDurationMs = 200;

@@ -77,6 +77,12 @@ void draw() {
     questionController.update();
   }
 
+  if (config.debugMode && config.useMicrophoneAnswerAdvance
+      && !microphoneAnswerController.isCalibrating()
+      && !microphoneAnswerController.isDetectingAnswer()) {
+    microphoneAnswerController.updateLevel();
+  }
+
   gazeClassifier.update(currentGazeRegion, currentGazeSample);
   currentGazeState = gazeClassifier.getStableState();
   mutualGazeEnded = gazeClassifier.hasMutualGazeEnded();
@@ -357,6 +363,7 @@ void drawDebugInfo() {
     text("Mic level: " + nf(microphoneAnswerController.getCurrentLevel(), 0, 4), 24, 370);
     text("Speech threshold: " + nf(microphoneAnswerController.getSpeechThreshold(), 0, 4), 24, 394);
     text("Speech detected: " + microphoneAnswerController.isSpeechDetected(), 24, 418);
+    text("Mic device: " + config.microphoneInputDevice + "  Gain: " + nf(config.microphoneGain, 0, 1), 24, 442);
   }
 
   if (studyPhase == StudyPhase.BREAK) {

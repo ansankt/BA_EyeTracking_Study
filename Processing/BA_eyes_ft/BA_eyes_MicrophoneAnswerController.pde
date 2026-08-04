@@ -1,6 +1,7 @@
 class MicrophoneAnswerController {
   PApplet parent;
   StudyConfig config;
+  Sound sound;
   AudioIn microphone;
   Amplitude amplitude;
 
@@ -25,8 +26,21 @@ class MicrophoneAnswerController {
     this.parent = parent;
     this.config = config;
 
+    if (config.printSoundDevicesOnStart) {
+      println("Available sound devices:");
+      printArray(Sound.list());
+    }
+
+    sound = new Sound(parent);
+
+    if (config.microphoneInputDevice >= 0) {
+      sound.inputDevice(config.microphoneInputDevice);
+      println("Selected microphone input device: " + config.microphoneInputDevice);
+    }
+
     microphone = new AudioIn(parent, 0);
     microphone.start();
+    microphone.amp(config.microphoneGain);
 
     amplitude = new Amplitude(parent);
     amplitude.input(microphone);
@@ -105,6 +119,7 @@ class MicrophoneAnswerController {
   }
 
   void updateLevel() {
+    microphone.amp(config.microphoneGain);
     currentLevel = amplitude.analyze();
   }
 
@@ -138,5 +153,9 @@ class MicrophoneAnswerController {
 
   boolean isDetectingAnswer() {
     return detectingAnswer;
+  }
+
+  boolean isCalibrating() {
+    return calibrating;
   }
 }
