@@ -1,5 +1,6 @@
 enum StudyPhase {
   INTRO,
+  MIC_CALIBRATION,
   TRIAL_RUNNING,
   BREAK,
   FINISHED

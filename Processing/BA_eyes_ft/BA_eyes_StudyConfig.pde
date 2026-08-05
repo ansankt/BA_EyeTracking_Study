@@ -6,6 +6,14 @@ class StudyConfig {
   int totalQuestionCount = 10;
   int sampleLogInterval = 33;
   int breakDuration = 2500;
+  boolean useMicrophoneAnswerAdvance = true;
+  boolean printSoundDevicesOnStart = true;
+  int microphoneInputDevice = -1;
+  float microphoneGain = 1.0;
+  float minimumValidMicSignalLevel = 0.0001;
+  int micCalibrationDurationMs = 2000;
+  int silenceToCompleteAnswerMs = 1000;
+  int minSpeechDurationMs = 200;
 
   String questionDirectory = "questions";
   String questionFilePrefix = "question_";
