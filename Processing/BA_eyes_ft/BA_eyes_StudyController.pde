@@ -42,7 +42,7 @@ void setup() {
   gazeInput = createGazeInput();
   gazeMapper = new GazeMapper(eyeAgent, eyeRenderer.getEyeWidth(), eyeRenderer.getEyeHeight(), config);
   gazeTargetMapper = new GazeTargetMapper(eyeAgent);
-  gazeClassifier = new GazeClassifier(eyeAgent, eyeRenderer.getPupilDiameter(), gazeMapper);
+  gazeClassifier = new GazeClassifier(eyeAgent, gazeMapper, config);
   eventLogger = new EventLogger(config.participantId);
   microphoneAnswerController = new MicrophoneAnswerController(this, config);
 
@@ -347,6 +347,7 @@ void drawDebugInfo() {
   text("In mutual gaze area: " + gazeMapper.isInsideMutualGazeArea(currentGazeSample), 24, 178);
   text("Eye size: " + nf(config.eyeWidthDeg, 0, 1) + " x " + nf(config.eyeHeightDeg, 0, 1) + " deg", 24, 298);
   text("Mutual area: " + nf(config.mutualGazeAreaWidthDeg, 0, 1) + " x " + nf(config.mutualGazeAreaHeightDeg, 0, 1) + " deg", 24, 322);
+  text("Agent center tolerance: " + nf(config.agentLooksAtUserToleranceDeg, 0, 2) + " deg", 24, 346);
 
   if (studyPhase == StudyPhase.INTRO) {
     text("Press SPACE to start", 24, 202);
@@ -365,14 +366,14 @@ void drawDebugInfo() {
   }
 
   if (config.useMicrophoneAnswerAdvance) {
-    text("Mic level: " + nf(microphoneAnswerController.getCurrentLevel(), 0, 4), 24, 370);
-    text("Speech threshold: " + nf(microphoneAnswerController.getSpeechThreshold(), 0, 4), 24, 394);
-    text("Speech detected: " + microphoneAnswerController.isSpeechDetected(), 24, 418);
-    text("Mic device: " + config.microphoneInputDevice + "  Gain: " + nf(config.microphoneGain, 0, 1), 24, 442);
+    text("Mic level: " + nf(microphoneAnswerController.getCurrentLevel(), 0, 4), 24, 394);
+    text("Speech threshold: " + nf(microphoneAnswerController.getSpeechThreshold(), 0, 4), 24, 418);
+    text("Speech detected: " + microphoneAnswerController.isSpeechDetected(), 24, 442);
+    text("Mic device: " + config.microphoneInputDevice + "  Gain: " + nf(config.microphoneGain, 0, 1), 24, 466);
 
     if (microphoneAnswerController.isCalibrationComplete() && !microphoneAnswerController.hasValidSignal()) {
       fill(180, 0, 0);
-      text("Warning: no microphone signal detected", 24, 466);
+      text("Warning: no microphone signal detected", 24, 490);
       fill(0);
     }
   }

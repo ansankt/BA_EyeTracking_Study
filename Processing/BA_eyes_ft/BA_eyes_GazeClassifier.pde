@@ -1,7 +1,6 @@
 class GazeClassifier {
   int stableDuration = 150;
-  float pupilHitRadius;
-  float agentLooksAtUserTolerance = 18;
+  float agentLooksAtUserTolerance;
 
   GazeState stableState = GazeState.INVALID;
   GazeState candidateState = GazeState.INVALID;
@@ -14,11 +13,15 @@ class GazeClassifier {
 
   EyeAgent eyeAgent;
   GazeMapper gazeMapper;
+  StudyConfig config;
+  VisualAngleConverter angleConverter;
 
-  GazeClassifier(EyeAgent eyeAgent, float pupilDiameter, GazeMapper gazeMapper) {
+  GazeClassifier(EyeAgent eyeAgent, GazeMapper gazeMapper, StudyConfig config) {
     this.eyeAgent = eyeAgent;
     this.gazeMapper = gazeMapper;
-    pupilHitRadius = pupilDiameter / 2;
+    this.config = config;
+    angleConverter = new VisualAngleConverter(config);
+    agentLooksAtUserTolerance = angleConverter.degToPxX(config.agentLooksAtUserToleranceDeg);
     candidateSince = millis();
     lastStateChangeTime = millis();
   }
@@ -70,27 +73,12 @@ class GazeClassifier {
     return GazeState.INVALID;
   }
 
-  boolean sampleHitsCurrentPupil(GazeRegion region, GazeSample sample) {
-    if (sample == null || !sample.valid) {
-      return false;
-    }
-
-    PVector gazePoint = new PVector(sample.x, sample.y);
-
-    if (region == GazeRegion.LEFT_EYE) {
-      return gazePoint.dist(eyeAgent.getLeftPupilPosition()) <= pupilHitRadius;
-    }
-
-    if (region == GazeRegion.RIGHT_EYE) {
-      return gazePoint.dist(eyeAgent.getRightPupilPosition()) <= pupilHitRadius;
-    }
-
-    return false;
-  }
-
   boolean agentLooksAtUser() {
     return eyeAgent.getLeftPupilPosition().dist(eyeAgent.getLeftEyeCenter()) <= agentLooksAtUserTolerance;
-      // && eyeAgent.getRightPupilPosition().dist(eyeAgent.getRightEyeCenter()) <= agentLooksAtUserTolerance; //right not needed because pupils are mirrored
+  }
+
+  float getAgentLooksAtUserTolerancePx() {
+    return agentLooksAtUserTolerance;
   }
 
   GazeState getStableState() {

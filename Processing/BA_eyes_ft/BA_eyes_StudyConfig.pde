@@ -39,6 +39,7 @@ class StudyConfig {
   float mutualGazeAreaWidthDeg = 8.0;
   float mutualGazeAreaHeightDeg = 5.0;
   float mutualGazeAreaYOffsetDeg = 0.0;
+  float agentLooksAtUserToleranceDeg = 0.5;
 
   int lookingAtEyesToMutualGazeMs = 300;
   int lostGazeToRandomMs = 200;
