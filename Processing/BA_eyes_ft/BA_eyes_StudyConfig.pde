@@ -46,6 +46,14 @@ class StudyConfig {
   int maxMutualGazeDurationMs = 3600;
   int gazeBreakDurationMs = 1250;
 
+  String idleMovementPattern = "CHATVRM_SACCADE"; // "CHATVRM_SACCADE" or "RANDOM_WANDER"
+  String chatvrmSaccadeIdlePattern = "CHATVRM_SACCADE";
+  String randomWanderIdlePattern = "RANDOM_WANDER";
+  int idleSaccadeMinIntervalMs = 500;
+  int idleSaccadeMaxIntervalMs = 2000;
+  float idleSaccadeRadiusScale = 0.35;
+  float idleSaccadeMovementSpeed = 4.0;
+
   float gazeAwareMutualGazeSpeed = 6.0;
   float gazeAwareBreakSpeed = 5.0;
 }
