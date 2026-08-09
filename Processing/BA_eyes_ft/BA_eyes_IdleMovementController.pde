@@ -5,6 +5,7 @@ class IdleMovementController implements EyeController {
   static final int TARGET_MIXED = 3;
 
   EyeAgent eyeAgent;
+  StudyConfig config;
 
   int targetMode = TARGET_MIXED; //speciefies the strategy for the next eye position 
 
@@ -23,13 +24,67 @@ class IdleMovementController implements EyeController {
 
   boolean waiting = false;
   int waitUntil = 0;
+  int nextSaccadeTime = 0;
 
-  IdleMovementController(EyeAgent eyeAgent) {
+  IdleMovementController(EyeAgent eyeAgent, StudyConfig config) {
     this.eyeAgent = eyeAgent;
-    startWaiting();
+    this.config = config;
+    reset();
   }
 
   void update(GazeRegion currentGazeRegion, GazeSample currentGazeSample) {
+    if (usesChatvrmSaccades()) {
+      updateChatvrmSaccade();
+      return;
+    }
+
+    updateRandomWander();
+  }
+
+  void reset() {
+    waiting = false;
+    nextSaccadeTime = 0;
+
+    if (usesChatvrmSaccades()) {
+      eyeAgent.setMovementSpeed(config.idleSaccadeMovementSpeed);
+      eyeAgent.setSharedTargetFromLeftEye(centerTarget());
+      scheduleNextSaccade();
+      return;
+    }
+
+    startWaiting();
+  }
+
+  boolean usesChatvrmSaccades() {
+    return config.idleMovementPattern.equals(config.chatvrmSaccadeIdlePattern);
+  }
+
+  void updateChatvrmSaccade() {
+    if (millis() >= nextSaccadeTime) {
+      chooseChatvrmSaccadeTarget();
+      scheduleNextSaccade();
+    }
+  }
+
+  void scheduleNextSaccade() {
+    nextSaccadeTime = millis() + int(random(config.idleSaccadeMinIntervalMs, config.idleSaccadeMaxIntervalMs));
+  }
+
+  void chooseChatvrmSaccadeTarget() {
+    eyeAgent.setMovementSpeed(config.idleSaccadeMovementSpeed);
+    eyeAgent.setSharedTargetFromLeftEye(randomChatvrmSaccadeTarget());
+  }
+
+  PVector randomChatvrmSaccadeTarget() {
+    PVector center = eyeAgent.getLeftEyeCenter();
+
+    return new PVector(
+      center.x + random(-1, 1) * eyeAgent.getTargetRadiusX() * config.idleSaccadeRadiusScale,
+      center.y + random(-1, 1) * eyeAgent.getTargetRadiusY() * config.idleSaccadeRadiusScale
+    );
+  }
+
+  void updateRandomWander() {
     if (waiting) {
       if (millis() >= waitUntil) {
         waiting = false;
@@ -115,5 +170,17 @@ class IdleMovementController implements EyeController {
 
   PVector centerTarget() {
     return eyeAgent.getLeftEyeCenter();
+  }
+
+  String getPatternName() {
+    return config.idleMovementPattern;
+  }
+
+  int getNextSaccadeTime() {
+    return nextSaccadeTime;
+  }
+
+  int getTimeUntilNextSaccade() {
+    return max(0, nextSaccadeTime - millis());
   }
 }

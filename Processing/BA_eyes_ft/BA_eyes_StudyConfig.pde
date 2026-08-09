@@ -12,6 +12,7 @@ class StudyConfig {
   float microphoneGain = 1.0;
   float minimumValidMicSignalLevel = 0.0001;
   int micCalibrationDurationMs = 2000;
+  int answerLockoutAfterAudioMs = 1000;
   int silenceToCompleteAnswerMs = 1000;
   int minSpeechDurationMs = 200;
 
@@ -39,11 +40,20 @@ class StudyConfig {
   float mutualGazeAreaWidthDeg = 8.0;
   float mutualGazeAreaHeightDeg = 5.0;
   float mutualGazeAreaYOffsetDeg = 0.0;
+  float agentLooksAtUserToleranceDeg = 0.5;
 
   int lookingAtEyesToMutualGazeMs = 300;
   int lostGazeToRandomMs = 200;
   int maxMutualGazeDurationMs = 3600;
   int gazeBreakDurationMs = 1250;
+
+  String idleMovementPattern = "CHATVRM_SACCADE"; // "CHATVRM_SACCADE" or "RANDOM_WANDER"
+  String chatvrmSaccadeIdlePattern = "CHATVRM_SACCADE";
+  String randomWanderIdlePattern = "RANDOM_WANDER";
+  int idleSaccadeMinIntervalMs = 500;
+  int idleSaccadeMaxIntervalMs = 2000;
+  float idleSaccadeRadiusScale = 0.35;
+  float idleSaccadeMovementSpeed = 4.0;
 
   float gazeAwareMutualGazeSpeed = 6.0;
   float gazeAwareBreakSpeed = 5.0;

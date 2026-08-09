@@ -42,11 +42,11 @@ void setup() {
   gazeInput = createGazeInput();
   gazeMapper = new GazeMapper(eyeAgent, eyeRenderer.getEyeWidth(), eyeRenderer.getEyeHeight(), config);
   gazeTargetMapper = new GazeTargetMapper(eyeAgent);
-  gazeClassifier = new GazeClassifier(eyeAgent, eyeRenderer.getPupilDiameter(), gazeMapper);
+  gazeClassifier = new GazeClassifier(eyeAgent, gazeMapper, config);
   eventLogger = new EventLogger(config.participantId);
   microphoneAnswerController = new MicrophoneAnswerController(this, config);
 
-  idleMovementController = new IdleMovementController(eyeAgent);
+  idleMovementController = new IdleMovementController(eyeAgent, config);
   gazeAwareController = new GazeAwareController(eyeAgent, config, eventLogger, gazeMapper);
 
   // activeEyeController = idleMovementController;
@@ -96,6 +96,8 @@ void draw() {
     eyeAgent.getLeftPupilPosition(),
     eyeAgent.getRightPupilPosition()
   );
+
+  drawStudyPhaseMessage();
 
   if (config.debugMode) {
     drawMutualGazeAreaDebug();
@@ -338,59 +340,93 @@ void drawDebugInfo() {
 
   fill(0);
   textSize(18);
-  text("Debug: ON (D toggles)", 24, 34);
-  text("Phase: " + studyPhase, 24, 58);
-  text("Condition: " + activeCondition, 24, 82);
-  text("Gaze region: " + currentGazeRegion, 24, 106);
-  text("Gaze state: " + currentGazeState, 24, 130);
-  text("Aware mode: " + gazeAwareController.getMode(), 24, 154);
-  text("In mutual gaze area: " + gazeMapper.isInsideMutualGazeArea(currentGazeSample), 24, 178);
-  text("Eye size: " + nf(config.eyeWidthDeg, 0, 1) + " x " + nf(config.eyeHeightDeg, 0, 1) + " deg", 24, 298);
-  text("Mutual area: " + nf(config.mutualGazeAreaWidthDeg, 0, 1) + " x " + nf(config.mutualGazeAreaHeightDeg, 0, 1) + " deg", 24, 322);
+  int y = 34;
+  int lineHeight = 24;
+
+  text("Debug: ON (D toggles)", 24, y); y += lineHeight;
+  text("Phase: " + studyPhase, 24, y); y += lineHeight;
+  text("Condition: " + activeCondition, 24, y); y += lineHeight;
+  text("Gaze region: " + currentGazeRegion, 24, y); y += lineHeight;
+  text("Gaze state: " + currentGazeState, 24, y); y += lineHeight;
+  text("Aware mode: " + gazeAwareController.getMode(), 24, y); y += lineHeight;
+  text("In mutual gaze area: " + gazeMapper.isInsideMutualGazeArea(currentGazeSample), 24, y); y += lineHeight;
+  text("Idle pattern: " + idleMovementController.getPatternName(), 24, y); y += lineHeight;
 
   if (studyPhase == StudyPhase.INTRO) {
-    text("Press SPACE to start", 24, 202);
+    text("Press SPACE to start", 24, y); y += lineHeight;
   }
 
   if (studyPhase == StudyPhase.MIC_CALIBRATION) {
-    text("Mic calibration", 24, 202);
-    text("Please stay silent", 24, 226);
+    text("Mic calibration", 24, y); y += lineHeight;
+    text("Please stay silent", 24, y); y += lineHeight;
   }
 
   if (studyPhase == StudyPhase.TRIAL_RUNNING && currentTrial != null) {
-    text("Trial: " + currentTrial.id + " / " + trials.length, 24, 202);
-    text("Question: " + questionController.currentQuestionNumber() + " / " + questionController.questionCount(), 24, 226);
-    text("Question phase: " + questionController.getPhase(), 24, 250);
-    text("Current question: " + questionController.currentQuestionId(), 24, 274);
+    text("Trial: " + currentTrial.id + " / " + trials.length, 24, y); y += lineHeight;
+    text("Question: " + questionController.currentQuestionNumber() + " / " + questionController.questionCount(), 24, y); y += lineHeight;
+    text("Question phase: " + questionController.getPhase(), 24, y); y += lineHeight;
+    text("Current question: " + questionController.currentQuestionId(), 24, y); y += lineHeight;
   }
 
+  if (studyPhase == StudyPhase.FINISHED) {
+    text("Finished", 24, y); y += lineHeight;
+  }
+
+  text("Eye size: " + nf(config.eyeWidthDeg, 0, 1) + " x " + nf(config.eyeHeightDeg, 0, 1) + " deg", 24, y); y += lineHeight;
+  text("Mutual area: " + nf(config.mutualGazeAreaWidthDeg, 0, 1) + " x " + nf(config.mutualGazeAreaHeightDeg, 0, 1) + " deg", 24, y); y += lineHeight;
+  text("Agent center tolerance: " + nf(config.agentLooksAtUserToleranceDeg, 0, 2) + " deg", 24, y); y += lineHeight;
+
   if (config.useMicrophoneAnswerAdvance) {
-    text("Mic level: " + nf(microphoneAnswerController.getCurrentLevel(), 0, 4), 24, 370);
-    text("Speech threshold: " + nf(microphoneAnswerController.getSpeechThreshold(), 0, 4), 24, 394);
-    text("Speech detected: " + microphoneAnswerController.isSpeechDetected(), 24, 418);
-    text("Mic device: " + config.microphoneInputDevice + "  Gain: " + nf(config.microphoneGain, 0, 1), 24, 442);
+    text("Mic level: " + nf(microphoneAnswerController.getCurrentLevel(), 0, 4), 24, y); y += lineHeight;
+    text("Speech threshold: " + nf(microphoneAnswerController.getSpeechThreshold(), 0, 4), 24, y); y += lineHeight;
+    text("Speech detected: " + microphoneAnswerController.isSpeechDetected(), 24, y); y += lineHeight;
+    text("Mic device: " + config.microphoneInputDevice + "  Gain: " + nf(config.microphoneGain, 0, 1), 24, y); y += lineHeight;
 
     if (microphoneAnswerController.isCalibrationComplete() && !microphoneAnswerController.hasValidSignal()) {
       fill(180, 0, 0);
-      text("Warning: no microphone signal detected", 24, 466);
+      text("Warning: no microphone signal detected", 24, y); y += lineHeight;
       fill(0);
     }
   }
 
-  if (studyPhase == StudyPhase.BREAK) {
-    text("Trial completed", 24, 202);
-    text("Please complete the questionnaire", 24, 226);
-    text("Press SPACE to continue", 24, 250);
-  }
-
-  if (studyPhase == StudyPhase.FINISHED) {
-    text("Finished", 24, 202);
-  }
-
   if (mutualGazeEnded) {
-    text("Mutual gaze ended", 24, 346);
+    text("Mutual gaze ended", 24, y);
   }
 
+  popStyle();
+}
+
+void drawStudyPhaseMessage() {
+  boolean showMicWarning = config.useMicrophoneAnswerAdvance
+    && microphoneAnswerController.isCalibrationComplete()
+    && !microphoneAnswerController.hasValidSignal();
+
+  if (studyPhase != StudyPhase.BREAK && !showMicWarning) {
+    return;
+  }
+
+  pushStyle();
+  textAlign(CENTER, CENTER);
+
+  if (showMicWarning) {
+    fill(180, 0, 0);
+    textSize(28);
+    text("Microphone signal not detected", width / 2, height * 0.62);
+    textSize(22);
+    text("Please check the microphone before continuing", width / 2, height * 0.67);
+  }
+
+  if (studyPhase != StudyPhase.BREAK) {
+    popStyle();
+    return;
+  }
+
+  fill(0);
+  textSize(32);
+  text("Trial completed", width / 2, height * 0.72);
+  textSize(24);
+  text("Please complete the questionnaire", width / 2, height * 0.78);
+  text("Press SPACE to continue", width / 2, height * 0.83);
   popStyle();
 }
 

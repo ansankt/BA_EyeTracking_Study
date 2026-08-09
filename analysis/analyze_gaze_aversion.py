@@ -7,6 +7,7 @@ from pathlib import Path
 
 EYE_CONTACT_STATES = {"LOOKING_AT_EYES", "MUTUAL_GAZE"}
 AVERSION_STATES = {"LOOKING_AT_FACE", "LOOKING_AWAY"}
+MUTUAL_GAZE_AREA_COLUMN = "in_mutual_gaze_area"
 
 
 def read_samples(path):
@@ -18,8 +19,16 @@ def read_samples(path):
         row["timestamp_ms"] = int(float(row["timestamp_ms"]))
         row["trial_time_ms"] = int(float(row["trial_time_ms"]))
         row["trial_id"] = int(row["trial_id"])
+        row[MUTUAL_GAZE_AREA_COLUMN] = parse_optional_bool(row.get(MUTUAL_GAZE_AREA_COLUMN))
 
     return rows
+
+
+def parse_optional_bool(value):
+    if value is None or value == "":
+        return None
+
+    return str(value).strip().lower() in {"true", "1", "yes"}
 
 
 def grouped_by_trial(rows):
@@ -57,6 +66,7 @@ def build_state_episodes(rows):
             current["end_timestamp_ms"] = row["timestamp_ms"]
             current["end_trial_time_ms"] = row["trial_time_ms"]
             current["sample_count"] += 1
+            current["in_mutual_gaze_area_sample_count"] += mutual_gaze_area_sample_value(row)
         else:
             close_episode(current, row)
             episodes.append(current)
@@ -79,6 +89,7 @@ def new_episode(row):
         "start_trial_time_ms": row["trial_time_ms"],
         "end_trial_time_ms": row["trial_time_ms"],
         "sample_count": 1,
+        "in_mutual_gaze_area_sample_count": mutual_gaze_area_sample_value(row),
     }
 
 
@@ -91,6 +102,15 @@ def close_episode(episode, next_row):
         0,
         episode["end_timestamp_ms"] - episode["start_timestamp_ms"],
     )
+    episode["in_mutual_gaze_area_ratio"] = (
+        episode["in_mutual_gaze_area_sample_count"] / episode["sample_count"]
+        if episode["sample_count"] > 0
+        else 0
+    )
+
+
+def mutual_gaze_area_sample_value(row):
+    return 1 if row.get(MUTUAL_GAZE_AREA_COLUMN) is True else 0
 
 
 def build_category_episodes(state_episodes):
@@ -146,7 +166,7 @@ def median(values):
     return statistics.median(values) if values else 0
 
 
-def analyze_trial(participant_id, trial_id, condition, state_episodes):
+def analyze_trial(participant_id, trial_id, condition, trial_rows, state_episodes):
     category_episodes = build_category_episodes(state_episodes)
     trial_duration_ms = 0
 
@@ -207,6 +227,7 @@ def analyze_trial(participant_id, trial_id, condition, state_episodes):
     aversion_count = len(aversions)
     trial_duration_min = trial_duration_ms / 60000 if trial_duration_ms > 0 else 0
     return_to_eyes_count = sum(1 for item in aversions if item["returned_to_eyes"])
+    mutual_area_metrics = analyze_mutual_gaze_area(trial_rows, trial_duration_ms)
 
     return {
         "participant_id": participant_id,
@@ -226,6 +247,47 @@ def analyze_trial(participant_id, trial_id, condition, state_episodes):
         "away_aversion_count": sum(1 for item in aversions if item["first_aversion_state"] == "LOOKING_AWAY"),
         "aversion_after_mutual_gaze_count": sum(1 for item in aversions if item["aversion_after_mutual_gaze"]),
         "mean_time_from_mutual_gaze_to_aversion_ms": round(mean(mutual_to_aversion), 3),
+        **mutual_area_metrics,
+    }
+
+
+def analyze_mutual_gaze_area(rows, trial_duration_ms):
+    has_column = any(row.get(MUTUAL_GAZE_AREA_COLUMN) is not None for row in rows)
+
+    if not has_column:
+        return {
+            "has_mutual_gaze_area_column": False,
+            "mutual_gaze_area_sample_count": 0,
+            "mutual_gaze_area_sample_ratio": 0,
+            "mutual_gaze_area_duration_ms": 0,
+            "mutual_gaze_area_duration_ratio": 0,
+            "mutual_gaze_area_entry_count": 0,
+        }
+
+    sample_count = len(rows)
+    area_sample_count = sum(1 for row in rows if row.get(MUTUAL_GAZE_AREA_COLUMN) is True)
+    area_duration_ms = 0
+    entry_count = 0
+    was_inside = False
+
+    for index, row in enumerate(rows):
+        is_inside = row.get(MUTUAL_GAZE_AREA_COLUMN) is True
+
+        if is_inside and not was_inside:
+            entry_count += 1
+
+        if index < len(rows) - 1 and is_inside:
+            area_duration_ms += max(0, rows[index + 1]["timestamp_ms"] - row["timestamp_ms"])
+
+        was_inside = is_inside
+
+    return {
+        "has_mutual_gaze_area_column": True,
+        "mutual_gaze_area_sample_count": area_sample_count,
+        "mutual_gaze_area_sample_ratio": round(area_sample_count / sample_count, 6) if sample_count > 0 else 0,
+        "mutual_gaze_area_duration_ms": round(area_duration_ms, 3),
+        "mutual_gaze_area_duration_ratio": round(area_duration_ms / trial_duration_ms, 6) if trial_duration_ms > 0 else 0,
+        "mutual_gaze_area_entry_count": entry_count,
     }
 
 
@@ -270,7 +332,7 @@ def main():
     for (participant_id, trial_id, condition), trial_rows in sorted(groups.items(), key=lambda item: item[0]):
         state_episodes = build_state_episodes(trial_rows)
         all_state_episodes.extend(state_episodes)
-        metric_rows.append(analyze_trial(participant_id, trial_id, condition, state_episodes))
+        metric_rows.append(analyze_trial(participant_id, trial_id, condition, trial_rows, state_episodes))
 
     base_name = samples_path.stem.replace("_samples", "")
     episodes_path = out_dir / f"{base_name}_state_episodes.csv"
@@ -288,6 +350,8 @@ def main():
         "end_trial_time_ms",
         "duration_ms",
         "sample_count",
+        "in_mutual_gaze_area_sample_count",
+        "in_mutual_gaze_area_ratio",
     ]
 
     metric_fields = [
@@ -308,6 +372,12 @@ def main():
         "away_aversion_count",
         "aversion_after_mutual_gaze_count",
         "mean_time_from_mutual_gaze_to_aversion_ms",
+        "has_mutual_gaze_area_column",
+        "mutual_gaze_area_sample_count",
+        "mutual_gaze_area_sample_ratio",
+        "mutual_gaze_area_duration_ms",
+        "mutual_gaze_area_duration_ratio",
+        "mutual_gaze_area_entry_count",
     ]
 
     write_csv(episodes_path, all_state_episodes, episode_fields)

@@ -15,7 +15,7 @@ class GazeAwareController implements EyeController {
     this.config = config;
     this.eventLogger = eventLogger;
     this.gazeMapper = gazeMapper;
-    randomGazeController = new IdleMovementController(eyeAgent);
+    randomGazeController = new IdleMovementController(eyeAgent, config);
     resetToRandomGaze();
   }
 
@@ -112,7 +112,7 @@ class GazeAwareController implements EyeController {
     modeStartTime = millis();
     lookingAtEyesSince = -1;
     notLookingAtEyesSince = -1;
-    randomGazeController = new IdleMovementController(eyeAgent);
+    randomGazeController = new IdleMovementController(eyeAgent, config);
   }
 
   PVector randomBreakTarget() {

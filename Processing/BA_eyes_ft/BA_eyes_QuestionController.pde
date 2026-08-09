@@ -12,7 +12,6 @@ class QuestionController {
 
   QuestionPhase phase = QuestionPhase.READY_TO_START;
   int phaseStartTime = 0;
-  int answerLockoutAfterAudioMs = 2000;
 
   QuestionController(PApplet parent, Question[] questions, EventLogger eventLogger, StudyConfig config, MicrophoneAnswerController microphoneAnswerController) {
     this.parent = parent;
@@ -34,7 +33,7 @@ class QuestionController {
       logQuestionEvent("QUESTION_AUDIO_ENDED");
     }
 
-    if (phase == QuestionPhase.ANSWER_LOCKED && millis() - phaseStartTime >= answerLockoutAfterAudioMs) {
+    if (phase == QuestionPhase.ANSWER_LOCKED && millis() - phaseStartTime >= config.answerLockoutAfterAudioMs) {
       phase = QuestionPhase.WAITING_FOR_ANSWER;
       logQuestionEvent("QUESTION_ANSWER_ENABLED");
 
