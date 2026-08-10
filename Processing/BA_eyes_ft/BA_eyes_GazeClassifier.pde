@@ -77,6 +77,10 @@ class GazeClassifier {
     return eyeAgent.getLeftPupilPosition().dist(eyeAgent.getLeftEyeCenter()) <= agentLooksAtUserTolerance;
   }
 
+  boolean isAgentLookingAtUser() {
+    return agentLooksAtUser();
+  }
+
   float getAgentLooksAtUserTolerancePx() {
     return agentLooksAtUserTolerance;
   }
