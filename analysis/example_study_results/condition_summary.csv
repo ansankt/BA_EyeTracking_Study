@@ -1,0 +1,23 @@
+condition,metric,metric_label,unit,participant_count,mean,standard_deviation
+GAZE_AWARE,user_looks_at_avatar_proportion_time,User looks at avatar: proportion of time,proportion,2,0.495,0.035355
+GAZE_AWARE,user_looks_at_avatar_mean_episode_duration_ms,User looks at avatar: mean episode duration,ms,2,3300.0,235.702732
+GAZE_AWARE,user_looks_at_avatar_episode_rate_per_minute,User looks at avatar: episode rate,episodes/min,2,9.0,0.0
+GAZE_AWARE,avatar_looks_at_user_proportion_time,Avatar looks at user: proportion of time,proportion,2,0.59,0.056569
+GAZE_AWARE,avatar_looks_at_user_mean_episode_duration_ms,Avatar looks at user: mean episode duration,ms,2,3933.3335,377.123381
+GAZE_AWARE,avatar_looks_at_user_episode_rate_per_minute,Avatar looks at user: episode rate,episodes/min,2,9.0,0.0
+GAZE_AWARE,mutual_gaze_proportion_time,Mutual gaze: proportion of time,proportion,2,0.42,0.056569
+GAZE_AWARE,mutual_gaze_mean_episode_duration_ms,Mutual gaze: mean episode duration,ms,2,2958.3335,153.206705
+GAZE_AWARE,mutual_gaze_episode_rate_per_minute,Mutual gaze: episode rate,episodes/min,2,8.5,0.707107
+GAZE_AWARE,gaze_aversion_rate_per_minute,Gaze aversion: rate,aversions/min,2,2.25,0.353553
+GAZE_AWARE,mean_aversion_duration_ms,Gaze aversion: mean duration,ms,2,1565.0,120.208153
+GAZE_UNAWARE,user_looks_at_avatar_proportion_time,User looks at avatar: proportion of time,proportion,2,0.335,0.035355
+GAZE_UNAWARE,user_looks_at_avatar_mean_episode_duration_ms,User looks at avatar: mean episode duration,ms,2,2362.5,53.033009
+GAZE_UNAWARE,user_looks_at_avatar_episode_rate_per_minute,User looks at avatar: episode rate,episodes/min,2,8.5,0.707107
+GAZE_UNAWARE,avatar_looks_at_user_proportion_time,Avatar looks at user: proportion of time,proportion,2,0.245,0.035355
+GAZE_UNAWARE,avatar_looks_at_user_mean_episode_duration_ms,Avatar looks at user: mean episode duration,ms,2,1560.0,339.411255
+GAZE_UNAWARE,avatar_looks_at_user_episode_rate_per_minute,Avatar looks at user: episode rate,episodes/min,2,9.5,0.707107
+GAZE_UNAWARE,mutual_gaze_proportion_time,Mutual gaze: proportion of time,proportion,2,0.135,0.035355
+GAZE_UNAWARE,mutual_gaze_mean_episode_duration_ms,Mutual gaze: mean episode duration,ms,2,1350.0,353.553391
+GAZE_UNAWARE,mutual_gaze_episode_rate_per_minute,Mutual gaze: episode rate,episodes/min,2,6.0,0.0
+GAZE_UNAWARE,gaze_aversion_rate_per_minute,Gaze aversion: rate,aversions/min,2,3.75,0.353553
+GAZE_UNAWARE,mean_aversion_duration_ms,Gaze aversion: mean duration,ms,2,995.0,77.781746

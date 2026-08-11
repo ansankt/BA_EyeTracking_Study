@@ -8,6 +8,7 @@ from pathlib import Path
 EYE_CONTACT_STATES = {"LOOKING_AT_EYES", "MUTUAL_GAZE"}
 AVERSION_STATES = {"LOOKING_AT_FACE", "LOOKING_AWAY"}
 MUTUAL_GAZE_AREA_COLUMN = "in_mutual_gaze_area"
+AGENT_LOOKS_AT_USER_COLUMN = "agent_looks_at_user"
 
 
 def read_samples(path):
@@ -20,6 +21,7 @@ def read_samples(path):
         row["trial_time_ms"] = int(float(row["trial_time_ms"]))
         row["trial_id"] = int(row["trial_id"])
         row[MUTUAL_GAZE_AREA_COLUMN] = parse_optional_bool(row.get(MUTUAL_GAZE_AREA_COLUMN))
+        row[AGENT_LOOKS_AT_USER_COLUMN] = parse_optional_bool(row.get(AGENT_LOOKS_AT_USER_COLUMN))
 
     return rows
 
@@ -240,6 +242,7 @@ def analyze_trial(participant_id, trial_id, condition, trial_rows, state_episode
         "median_eye_contact_before_aversion_ms": round(median(eye_contact_before), 3),
         "mean_aversion_duration_ms": round(mean(aversion_durations), 3),
         "median_aversion_duration_ms": round(median(aversion_durations), 3),
+        "total_aversion_duration_ms": round(sum(aversion_durations), 3),
         "return_to_eyes_count": return_to_eyes_count,
         "return_to_eyes_rate": round(return_to_eyes_count / aversion_count, 6) if aversion_count > 0 else 0,
         "mean_return_to_eyes_latency_ms": round(mean(return_latencies), 3),
@@ -249,6 +252,123 @@ def analyze_trial(participant_id, trial_id, condition, trial_rows, state_episode
         "mean_time_from_mutual_gaze_to_aversion_ms": round(mean(mutual_to_aversion), 3),
         **mutual_area_metrics,
     }
+
+
+def trial_duration_ms(rows):
+    if len(rows) < 2:
+        return 0
+
+    return max(0, rows[-1]["timestamp_ms"] - rows[0]["timestamp_ms"])
+
+
+def build_boolean_episodes(rows, interaction_name, predicate):
+    episodes = []
+    current = None
+
+    for row in rows:
+        if predicate(row):
+            if current is None:
+                current = {
+                    "participant_id": row["participant_id"],
+                    "trial_id": row["trial_id"],
+                    "condition": row["condition"],
+                    "interaction": interaction_name,
+                    "start_timestamp_ms": row["timestamp_ms"],
+                    "end_timestamp_ms": row["timestamp_ms"],
+                    "sample_count": 1,
+                }
+            else:
+                current["end_timestamp_ms"] = row["timestamp_ms"]
+                current["sample_count"] += 1
+        elif current is not None:
+            current["end_timestamp_ms"] = row["timestamp_ms"]
+            close_boolean_episode(current)
+            episodes.append(current)
+            current = None
+
+    if current is not None:
+        close_boolean_episode(current)
+        episodes.append(current)
+
+    return episodes
+
+
+def close_boolean_episode(episode):
+    episode["duration_ms"] = max(
+        0,
+        episode["end_timestamp_ms"] - episode["start_timestamp_ms"],
+    )
+
+
+def interaction_metrics(interaction_name, episodes, duration_ms):
+    episode_count = len(episodes)
+    total_episode_duration_ms = sum(episode["duration_ms"] for episode in episodes)
+    trial_duration_min = duration_ms / 60000 if duration_ms > 0 else 0
+
+    return {
+        f"{interaction_name}_proportion_time": round(
+            total_episode_duration_ms / duration_ms, 6,
+        ) if duration_ms > 0 else 0,
+        f"{interaction_name}_mean_episode_duration_ms": round(
+            mean([episode["duration_ms"] for episode in episodes]), 3,
+        ),
+        f"{interaction_name}_episode_rate_per_minute": round(
+            episode_count / trial_duration_min, 6,
+        ) if trial_duration_min > 0 else 0,
+        f"{interaction_name}_episode_count": episode_count,
+        f"{interaction_name}_total_episode_duration_ms": round(total_episode_duration_ms, 3),
+    }
+
+
+def empty_interaction_metrics(interaction_name):
+    return {
+        f"{interaction_name}_proportion_time": None,
+        f"{interaction_name}_mean_episode_duration_ms": None,
+        f"{interaction_name}_episode_rate_per_minute": None,
+        f"{interaction_name}_episode_count": None,
+        f"{interaction_name}_total_episode_duration_ms": None,
+    }
+
+
+def analyze_interactions(participant_id, trial_id, condition, rows):
+    duration_ms = trial_duration_ms(rows)
+    user_looks_at_avatar = build_boolean_episodes(
+        rows,
+        "user_looks_at_avatar",
+        lambda row: row.get(MUTUAL_GAZE_AREA_COLUMN) is True,
+    )
+    has_agent_look_column = any(
+        row.get(AGENT_LOOKS_AT_USER_COLUMN) is not None for row in rows
+    )
+
+    result = {
+        "participant_id": participant_id,
+        "trial_id": trial_id,
+        "condition": condition,
+        "trial_duration_ms": round(duration_ms, 3),
+        "has_agent_looks_at_user_column": has_agent_look_column,
+        **interaction_metrics("user_looks_at_avatar", user_looks_at_avatar, duration_ms),
+    }
+
+    if not has_agent_look_column:
+        result.update(empty_interaction_metrics("avatar_looks_at_user"))
+        result.update(empty_interaction_metrics("mutual_gaze"))
+        return result, user_looks_at_avatar
+
+    avatar_looks_at_user = build_boolean_episodes(
+        rows,
+        "avatar_looks_at_user",
+        lambda row: row.get(AGENT_LOOKS_AT_USER_COLUMN) is True,
+    )
+    mutual_gaze = build_boolean_episodes(
+        rows,
+        "mutual_gaze",
+        lambda row: row.get(MUTUAL_GAZE_AREA_COLUMN) is True
+        and row.get(AGENT_LOOKS_AT_USER_COLUMN) is True,
+    )
+    result.update(interaction_metrics("avatar_looks_at_user", avatar_looks_at_user, duration_ms))
+    result.update(interaction_metrics("mutual_gaze", mutual_gaze, duration_ms))
+    return result, user_looks_at_avatar + avatar_looks_at_user + mutual_gaze
 
 
 def analyze_mutual_gaze_area(rows, trial_duration_ms):
@@ -327,16 +447,28 @@ def main():
     groups = grouped_by_trial(rows)
 
     all_state_episodes = []
+    all_interaction_episodes = []
     metric_rows = []
+    interaction_metric_rows = []
 
     for (participant_id, trial_id, condition), trial_rows in sorted(groups.items(), key=lambda item: item[0]):
         state_episodes = build_state_episodes(trial_rows)
         all_state_episodes.extend(state_episodes)
         metric_rows.append(analyze_trial(participant_id, trial_id, condition, trial_rows, state_episodes))
+        interaction_row, interaction_episodes = analyze_interactions(
+            participant_id,
+            trial_id,
+            condition,
+            trial_rows,
+        )
+        interaction_metric_rows.append(interaction_row)
+        all_interaction_episodes.extend(interaction_episodes)
 
     base_name = samples_path.stem.replace("_samples", "")
     episodes_path = out_dir / f"{base_name}_state_episodes.csv"
     metrics_path = out_dir / f"{base_name}_gaze_aversion_metrics.csv"
+    interaction_episodes_path = out_dir / f"{base_name}_interaction_episodes.csv"
+    interaction_metrics_path = out_dir / f"{base_name}_interaction_metrics.csv"
 
     episode_fields = [
         "participant_id",
@@ -365,6 +497,7 @@ def main():
         "median_eye_contact_before_aversion_ms",
         "mean_aversion_duration_ms",
         "median_aversion_duration_ms",
+        "total_aversion_duration_ms",
         "return_to_eyes_count",
         "return_to_eyes_rate",
         "mean_return_to_eyes_latency_ms",
@@ -380,11 +513,45 @@ def main():
         "mutual_gaze_area_entry_count",
     ]
 
+    interaction_episode_fields = [
+        "participant_id",
+        "trial_id",
+        "condition",
+        "interaction",
+        "start_timestamp_ms",
+        "end_timestamp_ms",
+        "duration_ms",
+        "sample_count",
+    ]
+
+    interaction_metric_fields = [
+        "participant_id",
+        "trial_id",
+        "condition",
+        "trial_duration_ms",
+        "has_agent_looks_at_user_column",
+    ]
+    for interaction_name in ["user_looks_at_avatar", "avatar_looks_at_user", "mutual_gaze"]:
+        interaction_metric_fields.extend([
+            f"{interaction_name}_proportion_time",
+            f"{interaction_name}_mean_episode_duration_ms",
+            f"{interaction_name}_episode_rate_per_minute",
+            f"{interaction_name}_episode_count",
+            f"{interaction_name}_total_episode_duration_ms",
+        ])
+
     write_csv(episodes_path, all_state_episodes, episode_fields)
     write_csv(metrics_path, metric_rows, metric_fields)
+    write_csv(interaction_episodes_path, all_interaction_episodes, interaction_episode_fields)
+    write_csv(interaction_metrics_path, interaction_metric_rows, interaction_metric_fields)
 
     print(f"Wrote {episodes_path}")
     print(f"Wrote {metrics_path}")
+    print(f"Wrote {interaction_episodes_path}")
+    print(f"Wrote {interaction_metrics_path}")
+
+    if any(not row["has_agent_looks_at_user_column"] for row in interaction_metric_rows):
+        print("Warning: agent_looks_at_user is missing in this samples file; avatar and mutual-gaze metrics are blank.")
 
     for row in metric_rows:
         print(

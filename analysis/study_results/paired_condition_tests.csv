@@ -1,0 +1,12 @@
+metric,metric_label,unit,comparison,paired_participant_count,unaware_mean,unaware_standard_deviation,aware_mean,aware_standard_deviation,mean_difference_aware_minus_unaware,difference_standard_deviation,cohen_dz,test,permutation_count,p_value_raw,p_value_holm,significant_holm_0_05,note
+user_looks_at_avatar_proportion_time,User looks at avatar: proportion of time,proportion,GAZE_AWARE minus GAZE_UNAWARE,0,,,,,,,,,,,,,At least two paired participants are required for a comparison.
+user_looks_at_avatar_mean_episode_duration_ms,User looks at avatar: mean episode duration,ms,GAZE_AWARE minus GAZE_UNAWARE,0,,,,,,,,,,,,,At least two paired participants are required for a comparison.
+user_looks_at_avatar_episode_rate_per_minute,User looks at avatar: episode rate,episodes/min,GAZE_AWARE minus GAZE_UNAWARE,0,,,,,,,,,,,,,At least two paired participants are required for a comparison.
+avatar_looks_at_user_proportion_time,Avatar looks at user: proportion of time,proportion,GAZE_AWARE minus GAZE_UNAWARE,0,,,,,,,,,,,,,At least two paired participants are required for a comparison.
+avatar_looks_at_user_mean_episode_duration_ms,Avatar looks at user: mean episode duration,ms,GAZE_AWARE minus GAZE_UNAWARE,0,,,,,,,,,,,,,At least two paired participants are required for a comparison.
+avatar_looks_at_user_episode_rate_per_minute,Avatar looks at user: episode rate,episodes/min,GAZE_AWARE minus GAZE_UNAWARE,0,,,,,,,,,,,,,At least two paired participants are required for a comparison.
+mutual_gaze_proportion_time,Mutual gaze: proportion of time,proportion,GAZE_AWARE minus GAZE_UNAWARE,0,,,,,,,,,,,,,At least two paired participants are required for a comparison.
+mutual_gaze_mean_episode_duration_ms,Mutual gaze: mean episode duration,ms,GAZE_AWARE minus GAZE_UNAWARE,0,,,,,,,,,,,,,At least two paired participants are required for a comparison.
+mutual_gaze_episode_rate_per_minute,Mutual gaze: episode rate,episodes/min,GAZE_AWARE minus GAZE_UNAWARE,0,,,,,,,,,,,,,At least two paired participants are required for a comparison.
+gaze_aversion_rate_per_minute,Gaze aversion: rate,aversions/min,GAZE_AWARE minus GAZE_UNAWARE,0,,,,,,,,,,,,,At least two paired participants are required for a comparison.
+mean_aversion_duration_ms,Gaze aversion: mean duration,ms,GAZE_AWARE minus GAZE_UNAWARE,0,,,,,,,,,,,,,At least two paired participants are required for a comparison.

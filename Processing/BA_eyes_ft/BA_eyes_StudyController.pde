@@ -323,6 +323,7 @@ void logCurrentFrame() {
       currentGazeRegion,
       currentGazeState,
       gazeMapper.isInsideMutualGazeArea(currentGazeSample),
+      gazeClassifier.isAgentLookingAtUser(),
       eyeAgent
     );
     lastSampleLogTime = millis();
