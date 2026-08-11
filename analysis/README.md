@@ -31,5 +31,14 @@ Das Skript erzeugt:
 - `participant_condition_metrics.csv`: eine Zeile pro Person und Modell.
 - `condition_summary.csv`: Mittelwert und Standardabweichung pro Modell und Metrik.
 - `paired_condition_tests.csv`: gepaarter Vergleich `GAZE_AWARE - GAZE_UNAWARE`, Effektstärke `Cohen's dz`, unkorriertes `p` und Holm-korrigiertes `p`.
+- `figures/interaction_proportion_time.svg`: Anteil der Zeit für die drei Interaktionszustände.
+- `figures/interaction_mean_episode_duration.svg`: mittlere Episodendauer für die drei Interaktionszustände.
+- `figures/interaction_episode_rate.svg`: Episodenrate für die drei Interaktionszustände.
+- `figures/gaze_aversion_rate.svg`: Blickaversionen pro Minute.
+- `figures/gaze_aversion_mean_duration.svg`: mittlere Dauer der Blickaversionen.
+- `figures/gaze_aversion_rate_boxplot.svg`: Verteilung der individuellen Aversion-Raten.
+- `figures/gaze_aversion_mean_duration_boxplot.svg`: Verteilung der individuellen mittleren Aversion-Dauern.
 
 Der Signifikanztest ist ein gepaarter Permutationstest. Das passt zum Within-Subject-Design, weil jede Person beide Modelle erlebt. Die Holm-Korrektur berücksichtigt, dass mehrere Metriken gleichzeitig geprüft werden.
+
+Die Diagramme sind skalierbare SVG-Dateien. Jeder Balken zeigt den Mittelwert eines Modells, jeder Fehlerbalken die Standardabweichung.
