@@ -27,6 +27,10 @@ class StudyConfig {
   String mouseGazeInputMode = "MOUSE";
   String tobiiGazeInputMode = "TOBII";
   float tobiiGazeTraceDiameter = 18.0;
+  int tobiiPhysicalScreenWidthPx = 1920;
+  int tobiiPhysicalScreenHeightPx = 1080;
+  int tobiiScreenOriginXPx = 0;
+  int tobiiScreenOriginYPx = 0;
 
   float screenWidthCm = 34.5;
   float screenHeightCm = 19.4;

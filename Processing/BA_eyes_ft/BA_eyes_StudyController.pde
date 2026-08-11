@@ -59,7 +59,7 @@ void setup() {
 
 GazeInput createGazeInput() {
   if (config.gazeInputMode.equals(config.tobiiGazeInputMode)) {
-    return new TobiiGazeInput(this);
+    return new TobiiGazeInput(this, config);
   }
 
   return new MouseGazeInput();
