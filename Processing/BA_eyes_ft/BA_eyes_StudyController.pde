@@ -59,7 +59,7 @@ void setup() {
 
 GazeInput createGazeInput() {
   if (config.gazeInputMode.equals(config.tobiiGazeInputMode)) {
-    return new TobiiGazeInput(this);
+    return new TobiiGazeInput(this, config);
   }
 
   return new MouseGazeInput();
@@ -100,6 +100,7 @@ void draw() {
   drawStudyPhaseMessage();
 
   if (config.debugMode) {
+    drawTobiiGazeTrace();
     drawMutualGazeAreaDebug();
     drawDebugInfo();
   }
@@ -440,5 +441,19 @@ void drawMutualGazeAreaDebug() {
   strokeWeight(2);
   rectMode(CORNERS);
   rect(area[0], area[2], area[1], area[3]);
+  popStyle();
+}
+
+void drawTobiiGazeTrace() {
+  if (!config.gazeInputMode.equals(config.tobiiGazeInputMode)
+      || currentGazeSample == null
+      || !currentGazeSample.valid) {
+    return;
+  }
+
+  pushStyle();
+  noStroke();
+  fill(230, 0, 0, 190);
+  circle(currentGazeSample.x, currentGazeSample.y, config.tobiiGazeTraceDiameter);
   popStyle();
 }
