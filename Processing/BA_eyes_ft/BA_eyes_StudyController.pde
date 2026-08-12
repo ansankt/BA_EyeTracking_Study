@@ -25,11 +25,16 @@ IdleMovementController idleMovementController;
 GazeAwareController gazeAwareController;
 String activeCondition = "";
 
+boolean showParticipantBackgroundImage = false;
+PImage participantBackgroundImage;
+String participantBackgroundImagePath = "picture/background.png";
+
 void setup() {
   //size(800, 800);
   fullScreen();
   config = new StudyConfig();
   activeCondition = config.gazeAwareCondition;
+  loadParticipantBackgroundImage();
 
   eyeRenderer = new EyeRenderer(config);
   eyeAgent = new EyeAgent(
@@ -91,7 +96,7 @@ void draw() {
     logCurrentFrame();
   }
 
-  eyeRenderer.clear();
+  drawParticipantBackground();
   eyeRenderer.drawEyes(
     eyeAgent.getLeftPupilPosition(),
     eyeAgent.getRightPupilPosition()
@@ -104,6 +109,33 @@ void draw() {
     drawMutualGazeAreaDebug();
     drawDebugInfo();
   }
+}
+
+void loadParticipantBackgroundImage() {
+  if (!showParticipantBackgroundImage) {
+    return;
+  }
+
+  java.io.File imageFile = new java.io.File(sketchPath(participantBackgroundImagePath));
+
+  if (!imageFile.exists()) {
+    println("Background image not found: " + imageFile.getAbsolutePath());
+    return;
+  }
+
+  participantBackgroundImage = loadImage(imageFile.getAbsolutePath());
+}
+
+void drawParticipantBackground() {
+  if (!showParticipantBackgroundImage || participantBackgroundImage == null) {
+    eyeRenderer.clear();
+    return;
+  }
+
+  pushStyle();
+  imageMode(CORNER);
+  image(participantBackgroundImage, 0, 0, width, height);
+  popStyle();
 }
 
 void keyPressed() {
