@@ -12,7 +12,7 @@ class StudyConfig {
   float microphoneGain = 1.0;
   float minimumValidMicSignalLevel = 0.0001;
   int micCalibrationDurationMs = 2000;
-  int answerLockoutAfterAudioMs = 1000;
+  int answerLockoutAfterAudioMs = 800;
   int silenceToCompleteAnswerMs = 1000;
   int minSpeechDurationMs = 200;
 

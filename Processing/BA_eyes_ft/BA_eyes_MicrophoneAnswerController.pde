@@ -21,6 +21,9 @@ class MicrophoneAnswerController {
   boolean answerFinished = false;
   int speechAboveThresholdSince = -1;
   int lastSpeechTime = 0;
+  
+  float maxNoiseMultiplier = 1.0;
+  float meanNoiseMultiplier = 1.2;
 
   MicrophoneAnswerController(PApplet parent, StudyConfig config) {
     this.parent = parent;
@@ -80,7 +83,7 @@ class MicrophoneAnswerController {
       meanNoise = noiseSum / noiseSampleCount;
     }
 
-    speechThreshold = max(meanNoise * 3.0, maxNoise * 1.3);
+    speechThreshold = max(meanNoise * meanNoiseMultiplier, maxNoise * maxNoiseMultiplier);
   }
 
   void startAnswerDetection() {
