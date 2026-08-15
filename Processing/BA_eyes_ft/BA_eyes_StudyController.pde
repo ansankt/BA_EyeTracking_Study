@@ -138,6 +138,12 @@ void drawParticipantBackground() {
   popStyle();
 }
 
+void mousePressed() {
+  if (mouseButton == LEFT) {
+    handleQuestionEnter();
+  }
+}
+
 void keyPressed() {
   if (key == 'd' || key == 'D') {
     config.debugMode = !config.debugMode;
