@@ -33,7 +33,7 @@ class StudyConfig {
   int tobiiScreenOriginYPx = 0;
 
   float screenWidthCm = 34.5;
-  float screenHeightCm = 19.4;
+  float screenHeightCm = 19.5;
   float viewingDistanceCm = 60.0;
 
   float eyeWidthDeg = 4.0;
