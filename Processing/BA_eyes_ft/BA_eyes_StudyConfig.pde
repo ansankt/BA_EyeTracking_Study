@@ -12,7 +12,7 @@ class StudyConfig {
   float microphoneGain = 1.0;
   float minimumValidMicSignalLevel = 0.0001;
   int micCalibrationDurationMs = 2000;
-  int answerLockoutAfterAudioMs = 1000;
+  int answerLockoutAfterAudioMs = 800;
   int silenceToCompleteAnswerMs = 1000;
   int minSpeechDurationMs = 200;
 
@@ -33,12 +33,12 @@ class StudyConfig {
   int tobiiScreenOriginYPx = 0;
 
   float screenWidthCm = 34.5;
-  float screenHeightCm = 19.4;
+  float screenHeightCm = 19.5;
   float viewingDistanceCm = 60.0;
 
   float eyeWidthDeg = 4.0;
   float eyeHeightDeg = 6.0;
-  float eyeDistanceDeg = 5.0;
+  float eyeDistanceDeg = 4.5;
   float pupilDiameterDeg = 1.0;
   float eyeStrokeWeight = 4.0;
 
@@ -56,7 +56,7 @@ class StudyConfig {
   String chatvrmSaccadeIdlePattern = "CHATVRM_SACCADE";
   String randomWanderIdlePattern = "RANDOM_WANDER";
   int idleSaccadeMinIntervalMs = 500;
-  int idleSaccadeMaxIntervalMs = 2000;
+  int idleSaccadeMaxIntervalMs = 2400;
   float idleSaccadeRadiusScale = 0.35;
   float idleSaccadeMovementSpeed = 4.0;
 

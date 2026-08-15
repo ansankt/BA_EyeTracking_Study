@@ -25,7 +25,7 @@ IdleMovementController idleMovementController;
 GazeAwareController gazeAwareController;
 String activeCondition = "";
 
-boolean showParticipantBackgroundImage = false;
+boolean showParticipantBackgroundImage = true;
 PImage participantBackgroundImage;
 String participantBackgroundImagePath = "picture/background.png";
 
@@ -136,6 +136,12 @@ void drawParticipantBackground() {
   imageMode(CORNER);
   image(participantBackgroundImage, 0, 0, width, height);
   popStyle();
+}
+
+void mousePressed() {
+  if (mouseButton == LEFT) {
+    handleQuestionEnter();
+  }
 }
 
 void keyPressed() {
@@ -460,7 +466,7 @@ void drawStudyPhaseMessage() {
   text("Trial completed", width / 2, height * 0.72);
   textSize(24);
   text("Please complete the questionnaire", width / 2, height * 0.78);
-  text("Press SPACE to continue", width / 2, height * 0.83);
+  text("Press SPACE to continue", width / 2, height * 0.81);
   popStyle();
 }
 
