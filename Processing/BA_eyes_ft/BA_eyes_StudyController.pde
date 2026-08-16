@@ -25,7 +25,7 @@ IdleMovementController idleMovementController;
 GazeAwareController gazeAwareController;
 String activeCondition = "";
 
-boolean showParticipantBackgroundImage = true;
+boolean showParticipantBackgroundImage = false;
 PImage participantBackgroundImage;
 String participantBackgroundImagePath = "picture/background.png";
 
@@ -280,7 +280,13 @@ void startStudyAfterIntro() {
 void startMicrophoneCalibration() {
   studyPhase = StudyPhase.MIC_CALIBRATION;
   microphoneAnswerController.startCalibration();
-  eventLogger.logEvent("MIC_CALIBRATION_START", currentGazeRegion, currentGazeState, "duration_ms=" + config.micCalibrationDurationMs);
+  eventLogger.logEvent(
+    "MIC_CALIBRATION_START",
+    currentGazeRegion,
+    currentGazeState,
+    "warmup_ms=" + config.micCalibrationWarmupMs
+      + ";duration_ms=" + config.micCalibrationDurationMs
+  );
 }
 
 void startNextTrial() {

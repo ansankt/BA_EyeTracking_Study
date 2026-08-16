@@ -66,11 +66,17 @@ class MicrophoneAnswerController {
     }
 
     updateLevel();
+    int calibrationElapsedMs = millis() - calibrationStartTime;
+
+    if (calibrationElapsedMs < config.micCalibrationWarmupMs) {
+      return;
+    }
+
     noiseSum += currentLevel;
     noiseSampleCount++;
     maxNoise = max(maxNoise, currentLevel);
 
-    if (millis() - calibrationStartTime >= config.micCalibrationDurationMs) {
+    if (calibrationElapsedMs >= config.micCalibrationWarmupMs + config.micCalibrationDurationMs) {
       finishCalibration();
     }
   }

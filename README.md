@@ -148,7 +148,7 @@ Question audio files are stored in `Processing/BA_eyes_ft/questions/` and are na
 
 With microphone answer advance enabled, the software:
 
-1. Calibrates silence before the first trial.
+1. Waits 500 ms, then calibrates silence before the first trial.
 2. Plays the question audio.
 3. Waits for the configured answer lockout.
 4. Detects speech over the calibrated threshold.
