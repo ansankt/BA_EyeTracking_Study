@@ -60,6 +60,16 @@ class MicrophoneAnswerController {
     speechThreshold = 0;
   }
 
+  boolean hasManualSpeechThreshold() {
+    return config.manualSpeechThreshold > 0;
+  }
+
+  void useManualSpeechThreshold() {
+    calibrating = false;
+    calibrationComplete = false;
+    speechThreshold = config.manualSpeechThreshold;
+  }
+
   void updateCalibration() {
     if (!calibrating) {
       return;
@@ -154,6 +164,10 @@ class MicrophoneAnswerController {
 
   float getSpeechThreshold() {
     return speechThreshold;
+  }
+
+  String getThresholdSource() {
+    return hasManualSpeechThreshold() ? "manual" : "calibrated";
   }
 
   boolean hasValidSignal() {

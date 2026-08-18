@@ -253,6 +253,7 @@ void updateStudyFlow() {
         "mean_noise=" + microphoneAnswerController.getMeanNoise()
           + ";max_noise=" + microphoneAnswerController.getMaxNoise()
           + ";speech_threshold=" + microphoneAnswerController.getSpeechThreshold()
+          + ";threshold_source=calibrated"
       );
 
       if (!microphoneAnswerController.hasValidSignal()) {
@@ -270,6 +271,19 @@ void updateStudyFlow() {
 
 void startStudyAfterIntro() {
   if (config.useMicrophoneAnswerAdvance) {
+    if (microphoneAnswerController.hasManualSpeechThreshold()) {
+      microphoneAnswerController.useManualSpeechThreshold();
+      eventLogger.logEvent(
+        "MIC_THRESHOLD_MANUAL",
+        currentGazeRegion,
+        currentGazeState,
+        "speech_threshold=" + microphoneAnswerController.getSpeechThreshold()
+          + ";threshold_source=manual"
+      );
+      startNextTrial();
+      return;
+    }
+
     startMicrophoneCalibration();
     return;
   }
@@ -425,6 +439,7 @@ void drawDebugInfo() {
   if (config.useMicrophoneAnswerAdvance) {
     text("Mic level: " + nf(microphoneAnswerController.getCurrentLevel(), 0, 4), 24, y); y += lineHeight;
     text("Speech threshold: " + nf(microphoneAnswerController.getSpeechThreshold(), 0, 4), 24, y); y += lineHeight;
+    text("Threshold source: " + microphoneAnswerController.getThresholdSource(), 24, y); y += lineHeight;
     text("Speech detected: " + microphoneAnswerController.isSpeechDetected(), 24, y); y += lineHeight;
     text("Mic device: " + config.microphoneInputDevice + "  Gain: " + nf(config.microphoneGain, 0, 1), 24, y); y += lineHeight;
 
