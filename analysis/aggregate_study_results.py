@@ -11,6 +11,8 @@ import statistics
 from collections import defaultdict
 from pathlib import Path
 
+from scipy import stats
+
 
 INTERACTIONS = (
     "user_looks_at_avatar",
@@ -564,84 +566,22 @@ def paired_permutation_test(differences, seed):
     return (extreme + 1) / (simulations + 1), "Monte-Carlo paired sign-permutation", simulations
 
 
-def beta_continued_fraction(a, b, x):
-    """Evaluate the continued fraction used for the incomplete beta function."""
-    max_iterations = 200
-    epsilon = 3e-14
-    minimum = 1e-300
-    qab = a + b
-    qap = a + 1.0
-    qam = a - 1.0
-    c = 1.0
-    d = 1.0 - qab * x / qap
-    if abs(d) < minimum:
-        d = minimum
-    d = 1.0 / d
-    result = d
-
-    for iteration in range(1, max_iterations + 1):
-        double_iteration = 2 * iteration
-        aa = iteration * (b - iteration) * x / ((qam + double_iteration) * (a + double_iteration))
-        d = 1.0 + aa * d
-        if abs(d) < minimum:
-            d = minimum
-        c = 1.0 + aa / c
-        if abs(c) < minimum:
-            c = minimum
-        d = 1.0 / d
-        result *= d * c
-
-        aa = -(a + iteration) * (qab + iteration) * x / ((a + double_iteration) * (qap + double_iteration))
-        d = 1.0 + aa * d
-        if abs(d) < minimum:
-            d = minimum
-        c = 1.0 + aa / c
-        if abs(c) < minimum:
-            c = minimum
-        d = 1.0 / d
-        delta = d * c
-        result *= delta
-        if abs(delta - 1.0) < epsilon:
-            return result
-
-    raise RuntimeError("Incomplete beta function did not converge.")
-
-
-def regularized_incomplete_beta(a, b, x):
-    if x <= 0.0:
-        return 0.0
-    if x >= 1.0:
-        return 1.0
-
-    logarithmic_factor = (
-        math.lgamma(a + b)
-        - math.lgamma(a)
-        - math.lgamma(b)
-        + a * math.log(x)
-        + b * math.log1p(-x)
-    )
-    front = math.exp(logarithmic_factor)
-    if x < (a + 1.0) / (a + b + 2.0):
-        return front * beta_continued_fraction(a, b, x) / a
-    return 1.0 - front * beta_continued_fraction(b, a, 1.0 - x) / b
-
-
-def paired_t_test(differences):
-    """Return the two-sided paired-sample t-test for condition differences."""
-    participant_count = len(differences)
+def paired_t_test(unaware_values, aware_values):
+    """Return SciPy's two-sided paired-sample t-test for the two conditions."""
+    participant_count = len(unaware_values)
     degrees_of_freedom = participant_count - 1
-    difference_sd = sample_sd(differences)
+    differences = [aware - unaware for unaware, aware in zip(unaware_values, aware_values)]
     difference_mean = mean(differences)
+    difference_sd = sample_sd(differences)
+    zero_tolerance = 1e-12 * max(1.0, abs(difference_mean))
 
-    if difference_sd == 0:
-        if difference_mean == 0:
+    if math.isclose(difference_sd, 0.0, rel_tol=0.0, abs_tol=zero_tolerance):
+        if math.isclose(difference_mean, 0.0, rel_tol=0.0, abs_tol=zero_tolerance):
             return 0.0, degrees_of_freedom, 1.0
         return math.copysign(math.inf, difference_mean), degrees_of_freedom, 0.0
 
-    t_statistic = difference_mean / (difference_sd / math.sqrt(participant_count))
-    x = degrees_of_freedom / (degrees_of_freedom + t_statistic ** 2)
-    p_value = regularized_incomplete_beta(degrees_of_freedom / 2.0, 0.5, x)
-    return t_statistic, degrees_of_freedom, p_value
+    result = stats.ttest_rel(aware_values, unaware_values, alternative="two-sided")
+    return float(result.statistic), degrees_of_freedom, float(result.pvalue)
 
 
 def holm_adjust(rows, raw_key, adjusted_key, significant_key):
@@ -707,7 +647,7 @@ def build_paired_tests(rows, unaware_condition, aware_condition):
             test_row["note"] = "At least two paired participants are required for a comparison."
         else:
             p_value, test_name, permutation_count = paired_permutation_test(differences, 20260810 + metric_index)
-            t_statistic, degrees_of_freedom, t_test_p_value = paired_t_test(differences)
+            t_statistic, degrees_of_freedom, t_test_p_value = paired_t_test(unaware_values, aware_values)
             test_row["permutation_test"] = test_name
             test_row["permutation_count"] = permutation_count
             test_row["p_value_permutation_raw"] = round(p_value, 6)

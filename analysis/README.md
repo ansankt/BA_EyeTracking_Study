@@ -1,5 +1,11 @@
 # Auswertung
 
+Die Gesamtauswertung benötigt SciPy. Mit Anaconda kann die Abhängigkeit beispielsweise wie folgt installiert werden:
+
+```bash
+python3 -m pip install -r analysis/requirements.txt
+```
+
 ## 1. Einzelne Aufzeichnung auswerten
 
 Für jede `*_samples.csv`-Datei:
@@ -39,7 +45,7 @@ Das Skript erzeugt:
 - `figures/gaze_aversion_rate_boxplot.svg`: Verteilung der individuellen Aversion-Raten.
 - `figures/gaze_aversion_mean_duration_boxplot.svg`: Verteilung der individuellen mittleren Aversion-Dauern.
 
-Für jede Metrik berechnet das Skript einen zweiseitigen gepaarten Permutationstest und einen zweiseitigen gepaarten t-Test. Beide Tests passen zum Within-Subject-Design, weil jede Person beide Modelle erlebt. Die Holm-Korrektur wird getrennt für die p-Werte beider Testfamilien berechnet.
+Für jede Metrik berechnet das Skript einen zweiseitigen gepaarten Permutationstest und einen zweiseitigen gepaarten t-Test. Der t-Test wird mit `scipy.stats.ttest_rel` durchgeführt. Beide Tests passen zum Within-Subject-Design, weil jede Person beide Modelle erlebt. Die Holm-Korrektur wird getrennt für die p-Werte beider Testfamilien berechnet.
 
 Die Spalten `p_value_permutation_raw` und `p_value_permutation_holm` enthalten die unkorrierten beziehungsweise Holm-korrigierten p-Werte des Permutationstests. Die Spalten `p_value_t_test_raw` und `p_value_t_test_holm` enthalten die entsprechenden p-Werte des gepaarten t-Tests. `t_statistic` und `t_degrees_of_freedom` dokumentieren zusätzlich die Teststatistik und Freiheitsgrade des t-Tests.
 
