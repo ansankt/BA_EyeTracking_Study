@@ -11,6 +11,8 @@ class StudyConfig {
   int microphoneInputDevice = -1;
   float microphoneGain = 1.0;
   float minimumValidMicSignalLevel = 0.0001;
+  float manualSpeechThreshold = -1; // Positive value skips microphone calibration.
+  int micCalibrationWarmupMs = 500;
   int micCalibrationDurationMs = 2000;
   int answerLockoutAfterAudioMs = 800;
   int silenceToCompleteAnswerMs = 1000;

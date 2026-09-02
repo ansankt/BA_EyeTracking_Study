@@ -108,7 +108,7 @@ All values are located in `Processing/BA_eyes_ft/BA_eyes_StudyConfig.pde`.
 | Mutual gaze | `mutualGazeAreaWidthDeg = 8.0`, `mutualGazeAreaHeightDeg = 5.0`, `agentLooksAtUserToleranceDeg = 0.5` |
 | Gaze-aware timing | `lookingAtEyesToMutualGazeMs`, `lostGazeToRandomMs`, `maxMutualGazeDurationMs`, `gazeBreakDurationMs` |
 | Idle behavior | `idleMovementPattern`, saccade interval, radius, and speed |
-| Microphone | calibration duration, lockout, silence duration, input device, and gain |
+| Microphone | calibration duration, manual threshold, lockout, silence duration, input device, and gain |
 
 Eye and mutual-gaze dimensions are configured in degrees of visual angle. `VisualAngleConverter` converts them to Processing pixels using the entered physical display dimensions and viewing distance.
 
@@ -148,13 +148,15 @@ Question audio files are stored in `Processing/BA_eyes_ft/questions/` and are na
 
 With microphone answer advance enabled, the software:
 
-1. Calibrates silence before the first trial.
+1. Waits 500 ms, then calibrates silence before the first trial.
 2. Plays the question audio.
 3. Waits for the configured answer lockout.
 4. Detects speech over the calibrated threshold.
 5. Starts the next question once the configured silence duration has elapsed.
 
 A visible warning and a `MIC_SIGNAL_WARNING` event are created if no valid microphone signal is detected during calibration.
+
+Set `manualSpeechThreshold` to a positive value to skip this calibration and use a known threshold for a controlled test. Keep the default `-1` for real study runs. The selected source is written as either `MIC_CALIBRATION_END` or `MIC_THRESHOLD_MANUAL` in `events.csv`.
 
 ## Data Logging
 

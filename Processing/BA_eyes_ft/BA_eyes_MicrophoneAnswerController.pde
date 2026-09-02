@@ -60,17 +60,33 @@ class MicrophoneAnswerController {
     speechThreshold = 0;
   }
 
+  boolean hasManualSpeechThreshold() {
+    return config.manualSpeechThreshold > 0;
+  }
+
+  void useManualSpeechThreshold() {
+    calibrating = false;
+    calibrationComplete = false;
+    speechThreshold = config.manualSpeechThreshold;
+  }
+
   void updateCalibration() {
     if (!calibrating) {
       return;
     }
 
     updateLevel();
+    int calibrationElapsedMs = millis() - calibrationStartTime;
+
+    if (calibrationElapsedMs < config.micCalibrationWarmupMs) {
+      return;
+    }
+
     noiseSum += currentLevel;
     noiseSampleCount++;
     maxNoise = max(maxNoise, currentLevel);
 
-    if (millis() - calibrationStartTime >= config.micCalibrationDurationMs) {
+    if (calibrationElapsedMs >= config.micCalibrationWarmupMs + config.micCalibrationDurationMs) {
       finishCalibration();
     }
   }
@@ -148,6 +164,10 @@ class MicrophoneAnswerController {
 
   float getSpeechThreshold() {
     return speechThreshold;
+  }
+
+  String getThresholdSource() {
+    return hasManualSpeechThreshold() ? "manual" : "calibrated";
   }
 
   boolean hasValidSignal() {
