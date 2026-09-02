@@ -30,7 +30,7 @@ Das Skript erzeugt:
 
 - `participant_condition_metrics.csv`: eine Zeile pro Person und Modell.
 - `condition_summary.csv`: Mittelwert und Standardabweichung pro Modell und Metrik.
-- `paired_condition_tests.csv`: gepaarter Vergleich `GAZE_AWARE - GAZE_UNAWARE`, Effektstärke `Cohen's dz`, unkorriertes `p` und Holm-korrigiertes `p`.
+- `paired_condition_tests.csv`: gepaarter Vergleich `GAZE_AWARE - GAZE_UNAWARE`, Effektstärke `Cohen's dz` sowie Ergebnisse des Permutations- und des gepaarten t-Tests.
 - `figures/interaction_proportion_time.svg`: Anteil der Zeit für die drei Interaktionszustände.
 - `figures/interaction_mean_episode_duration.svg`: mittlere Episodendauer für die drei Interaktionszustände.
 - `figures/interaction_episode_rate.svg`: Episodenrate für die drei Interaktionszustände.
@@ -39,6 +39,8 @@ Das Skript erzeugt:
 - `figures/gaze_aversion_rate_boxplot.svg`: Verteilung der individuellen Aversion-Raten.
 - `figures/gaze_aversion_mean_duration_boxplot.svg`: Verteilung der individuellen mittleren Aversion-Dauern.
 
-Der Signifikanztest ist ein gepaarter Permutationstest. Das passt zum Within-Subject-Design, weil jede Person beide Modelle erlebt. Die Holm-Korrektur berücksichtigt, dass mehrere Metriken gleichzeitig geprüft werden.
+Für jede Metrik berechnet das Skript einen zweiseitigen gepaarten Permutationstest und einen zweiseitigen gepaarten t-Test. Beide Tests passen zum Within-Subject-Design, weil jede Person beide Modelle erlebt. Die Holm-Korrektur wird getrennt für die p-Werte beider Testfamilien berechnet.
+
+Die Spalten `p_value_permutation_raw` und `p_value_permutation_holm` enthalten die unkorrierten beziehungsweise Holm-korrigierten p-Werte des Permutationstests. Die Spalten `p_value_t_test_raw` und `p_value_t_test_holm` enthalten die entsprechenden p-Werte des gepaarten t-Tests. `t_statistic` und `t_degrees_of_freedom` dokumentieren zusätzlich die Teststatistik und Freiheitsgrade des t-Tests.
 
 Die Diagramme sind skalierbare SVG-Dateien. Jeder Balken zeigt den Mittelwert eines Modells, jeder Fehlerbalken die Standardabweichung.

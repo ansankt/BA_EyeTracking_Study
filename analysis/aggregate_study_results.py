@@ -129,7 +129,7 @@ def sample_sd(values):
 
 def write_csv(path, rows, fieldnames):
     with open(path, "w", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer = csv.DictWriter(file, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 
@@ -564,15 +564,95 @@ def paired_permutation_test(differences, seed):
     return (extreme + 1) / (simulations + 1), "Monte-Carlo paired sign-permutation", simulations
 
 
-def holm_adjust(rows):
-    valid = [(index, row["p_value_raw"]) for index, row in enumerate(rows) if row["p_value_raw"] is not None]
+def beta_continued_fraction(a, b, x):
+    """Evaluate the continued fraction used for the incomplete beta function."""
+    max_iterations = 200
+    epsilon = 3e-14
+    minimum = 1e-300
+    qab = a + b
+    qap = a + 1.0
+    qam = a - 1.0
+    c = 1.0
+    d = 1.0 - qab * x / qap
+    if abs(d) < minimum:
+        d = minimum
+    d = 1.0 / d
+    result = d
+
+    for iteration in range(1, max_iterations + 1):
+        double_iteration = 2 * iteration
+        aa = iteration * (b - iteration) * x / ((qam + double_iteration) * (a + double_iteration))
+        d = 1.0 + aa * d
+        if abs(d) < minimum:
+            d = minimum
+        c = 1.0 + aa / c
+        if abs(c) < minimum:
+            c = minimum
+        d = 1.0 / d
+        result *= d * c
+
+        aa = -(a + iteration) * (qab + iteration) * x / ((a + double_iteration) * (qap + double_iteration))
+        d = 1.0 + aa * d
+        if abs(d) < minimum:
+            d = minimum
+        c = 1.0 + aa / c
+        if abs(c) < minimum:
+            c = minimum
+        d = 1.0 / d
+        delta = d * c
+        result *= delta
+        if abs(delta - 1.0) < epsilon:
+            return result
+
+    raise RuntimeError("Incomplete beta function did not converge.")
+
+
+def regularized_incomplete_beta(a, b, x):
+    if x <= 0.0:
+        return 0.0
+    if x >= 1.0:
+        return 1.0
+
+    logarithmic_factor = (
+        math.lgamma(a + b)
+        - math.lgamma(a)
+        - math.lgamma(b)
+        + a * math.log(x)
+        + b * math.log1p(-x)
+    )
+    front = math.exp(logarithmic_factor)
+    if x < (a + 1.0) / (a + b + 2.0):
+        return front * beta_continued_fraction(a, b, x) / a
+    return 1.0 - front * beta_continued_fraction(b, a, 1.0 - x) / b
+
+
+def paired_t_test(differences):
+    """Return the two-sided paired-sample t-test for condition differences."""
+    participant_count = len(differences)
+    degrees_of_freedom = participant_count - 1
+    difference_sd = sample_sd(differences)
+    difference_mean = mean(differences)
+
+    if difference_sd == 0:
+        if difference_mean == 0:
+            return 0.0, degrees_of_freedom, 1.0
+        return math.copysign(math.inf, difference_mean), degrees_of_freedom, 0.0
+
+    t_statistic = difference_mean / (difference_sd / math.sqrt(participant_count))
+    x = degrees_of_freedom / (degrees_of_freedom + t_statistic ** 2)
+    p_value = regularized_incomplete_beta(degrees_of_freedom / 2.0, 0.5, x)
+    return t_statistic, degrees_of_freedom, p_value
+
+
+def holm_adjust(rows, raw_key, adjusted_key, significant_key):
+    valid = [(index, row[raw_key]) for index, row in enumerate(rows) if row[raw_key] is not None]
     valid.sort(key=lambda item: item[1])
     adjusted = 0
     total = len(valid)
     for rank, (index, raw_p) in enumerate(valid):
         adjusted = max(adjusted, min(1.0, raw_p * (total - rank)))
-        rows[index]["p_value_holm"] = round(adjusted, 6)
-        rows[index]["significant_holm_0_05"] = adjusted < 0.05
+        rows[index][adjusted_key] = round(adjusted, 6)
+        rows[index][significant_key] = adjusted < 0.05
 
 
 def build_paired_tests(rows, unaware_condition, aware_condition):
@@ -605,11 +685,17 @@ def build_paired_tests(rows, unaware_condition, aware_condition):
             "mean_difference_aware_minus_unaware": round(mean(differences), 6) if differences else None,
             "difference_standard_deviation": round(sample_sd(differences), 6) if len(differences) > 1 else None,
             "cohen_dz": None,
-            "test": None,
+            "permutation_test": None,
             "permutation_count": None,
-            "p_value_raw": None,
-            "p_value_holm": None,
-            "significant_holm_0_05": None,
+            "p_value_permutation_raw": None,
+            "p_value_permutation_holm": None,
+            "significant_permutation_holm_0_05": None,
+            "t_test": None,
+            "t_statistic": None,
+            "t_degrees_of_freedom": None,
+            "p_value_t_test_raw": None,
+            "p_value_t_test_holm": None,
+            "significant_t_test_holm_0_05": None,
             "note": "",
         }
 
@@ -621,14 +707,30 @@ def build_paired_tests(rows, unaware_condition, aware_condition):
             test_row["note"] = "At least two paired participants are required for a comparison."
         else:
             p_value, test_name, permutation_count = paired_permutation_test(differences, 20260810 + metric_index)
-            test_row["test"] = test_name
+            t_statistic, degrees_of_freedom, t_test_p_value = paired_t_test(differences)
+            test_row["permutation_test"] = test_name
             test_row["permutation_count"] = permutation_count
-            test_row["p_value_raw"] = round(p_value, 6)
+            test_row["p_value_permutation_raw"] = round(p_value, 6)
+            test_row["t_test"] = "two-sided paired-sample t-test"
+            test_row["t_statistic"] = round(t_statistic, 6) if math.isfinite(t_statistic) else str(t_statistic)
+            test_row["t_degrees_of_freedom"] = degrees_of_freedom
+            test_row["p_value_t_test_raw"] = round(t_test_p_value, 6)
             if len(differences) < 5:
                 test_row["note"] = "Fewer than five paired participants: interpret this result as exploratory."
         tests.append(test_row)
 
-    holm_adjust(tests)
+    holm_adjust(
+        tests,
+        "p_value_permutation_raw",
+        "p_value_permutation_holm",
+        "significant_permutation_holm_0_05",
+    )
+    holm_adjust(
+        tests,
+        "p_value_t_test_raw",
+        "p_value_t_test_holm",
+        "significant_t_test_holm_0_05",
+    )
     return tests
 
 
@@ -674,7 +776,9 @@ def main():
         "metric", "metric_label", "unit", "comparison", "paired_participant_count",
         "unaware_mean", "unaware_standard_deviation", "aware_mean", "aware_standard_deviation",
         "mean_difference_aware_minus_unaware", "difference_standard_deviation", "cohen_dz",
-        "test", "permutation_count", "p_value_raw", "p_value_holm", "significant_holm_0_05", "note",
+        "permutation_test", "permutation_count", "p_value_permutation_raw", "p_value_permutation_holm",
+        "significant_permutation_holm_0_05", "t_test", "t_statistic", "t_degrees_of_freedom",
+        "p_value_t_test_raw", "p_value_t_test_holm", "significant_t_test_holm_0_05", "note",
     ]
 
     participant_path = out_dir / "participant_condition_metrics.csv"
