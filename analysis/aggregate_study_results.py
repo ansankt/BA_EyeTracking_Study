@@ -542,6 +542,26 @@ def build_condition_summary(rows):
     return summaries
 
 
+def build_aversion_incidence_summary(rows):
+    summaries = []
+    for condition in sorted({row["condition"] for row in rows}):
+        condition_rows = [row for row in rows if row["condition"] == condition]
+        participant_count = len(condition_rows)
+        participants_with_aversion = sum(
+            1 for row in condition_rows
+            if (to_float(row.get("gaze_aversion_count")) or 0) > 0
+        )
+        summaries.append({
+            "condition": condition,
+            "participant_count": participant_count,
+            "participants_with_gaze_aversion": participants_with_aversion,
+            "proportion_with_gaze_aversion": round(
+                participants_with_aversion / participant_count, 6,
+            ) if participant_count > 0 else None,
+        })
+    return summaries
+
+
 def paired_permutation_test(differences, seed):
     observed = abs(mean(differences))
     if observed == 0:
@@ -691,6 +711,7 @@ def main():
     trial_rows, missing_aversion_files = load_trial_rows(input_dir)
     participant_rows = aggregate_participant_condition_rows(trial_rows)
     summaries = build_condition_summary(participant_rows)
+    aversion_incidence_summaries = build_aversion_incidence_summary(participant_rows)
     tests = build_paired_tests(participant_rows, args.unaware_condition, args.aware_condition)
 
     participant_fields = [
@@ -712,6 +733,9 @@ def main():
     summary_fields = [
         "condition", "metric", "metric_label", "unit", "participant_count", "mean", "standard_deviation",
     ]
+    aversion_incidence_fields = [
+        "condition", "participant_count", "participants_with_gaze_aversion", "proportion_with_gaze_aversion",
+    ]
     test_fields = [
         "metric", "metric_label", "unit", "comparison", "paired_participant_count",
         "unaware_mean", "unaware_standard_deviation", "aware_mean", "aware_standard_deviation",
@@ -723,9 +747,11 @@ def main():
 
     participant_path = out_dir / "participant_condition_metrics.csv"
     summary_path = out_dir / "condition_summary.csv"
+    aversion_incidence_path = out_dir / "aversion_incidence_summary.csv"
     tests_path = out_dir / "paired_condition_tests.csv"
     write_csv(participant_path, participant_rows, participant_fields)
     write_csv(summary_path, summaries, summary_fields)
+    write_csv(aversion_incidence_path, aversion_incidence_summaries, aversion_incidence_fields)
     write_csv(tests_path, tests, test_fields)
     figure_paths, skipped_figures = write_figures(
         out_dir,
@@ -742,6 +768,7 @@ def main():
 
     print(f"Wrote {participant_path}")
     print(f"Wrote {summary_path}")
+    print(f"Wrote {aversion_incidence_path}")
     print(f"Wrote {tests_path}")
     for figure_path in figure_paths:
         print(f"Wrote {figure_path}")

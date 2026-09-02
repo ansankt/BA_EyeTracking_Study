@@ -36,6 +36,7 @@ Das Skript erzeugt:
 
 - `participant_condition_metrics.csv`: eine Zeile pro Person und Modell.
 - `condition_summary.csv`: Mittelwert und Standardabweichung pro Modell und Metrik.
+- `aversion_incidence_summary.csv`: Anzahl und Anteil der Personen mit mindestens einer Blickaversion pro Modell.
 - `paired_condition_tests.csv`: gepaarter Vergleich `GAZE_AWARE - GAZE_UNAWARE`, Effektstärke `Cohen's dz` sowie Ergebnisse des Permutations- und des gepaarten t-Tests.
 - `figures/interaction_proportion_time.svg`: Anteil der Zeit für die drei Interaktionszustände.
 - `figures/interaction_mean_episode_duration.svg`: mittlere Episodendauer für die drei Interaktionszustände.
@@ -48,5 +49,7 @@ Das Skript erzeugt:
 Für jede Metrik berechnet das Skript einen zweiseitigen gepaarten Permutationstest und einen zweiseitigen gepaarten t-Test. Der t-Test wird mit `scipy.stats.ttest_rel` durchgeführt. Beide Tests passen zum Within-Subject-Design, weil jede Person beide Modelle erlebt. Die Holm-Korrektur wird getrennt für die p-Werte beider Testfamilien berechnet.
 
 Die Spalten `p_value_permutation_raw` und `p_value_permutation_holm` enthalten die unkorrierten beziehungsweise Holm-korrigierten p-Werte des Permutationstests. Die Spalten `p_value_t_test_raw` und `p_value_t_test_holm` enthalten die entsprechenden p-Werte des gepaarten t-Tests. `t_statistic` und `t_degrees_of_freedom` dokumentieren zusätzlich die Teststatistik und Freiheitsgrade des t-Tests.
+
+Bei null Blickaversionen werden aversionsbezogene Dauerkennwerte, beispielsweise `mean_aversion_duration_ms`, als fehlend gespeichert. Ein Wert von `0` bleibt ausschließlich für Kennwerte sinnvoll, bei denen null eine reale Beobachtung bedeutet, etwa `gaze_aversion_rate_per_minute` oder `total_aversion_duration_ms`. Dadurch beschreibt die mittlere Aversiondauer ausschließlich die Dauer tatsächlich beobachteter Aversionen.
 
 Die Diagramme sind skalierbare SVG-Dateien. Jeder Balken zeigt den Mittelwert eines Modells, jeder Fehlerbalken die Standardabweichung.

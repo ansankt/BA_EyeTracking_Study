@@ -168,6 +168,14 @@ def median(values):
     return statistics.median(values) if values else 0
 
 
+def mean_or_none(values):
+    return statistics.mean(values) if values else None
+
+
+def median_or_none(values):
+    return statistics.median(values) if values else None
+
+
 def analyze_trial(participant_id, trial_id, condition, trial_rows, state_episodes):
     category_episodes = build_category_episodes(state_episodes)
     trial_duration_ms = 0
@@ -238,18 +246,18 @@ def analyze_trial(participant_id, trial_id, condition, trial_rows, state_episode
         "trial_duration_ms": round(trial_duration_ms, 3),
         "gaze_aversion_count": aversion_count,
         "gaze_aversion_rate_per_minute": round(aversion_count / trial_duration_min, 6) if trial_duration_min > 0 else 0,
-        "mean_eye_contact_before_aversion_ms": round(mean(eye_contact_before), 3),
-        "median_eye_contact_before_aversion_ms": round(median(eye_contact_before), 3),
-        "mean_aversion_duration_ms": round(mean(aversion_durations), 3),
-        "median_aversion_duration_ms": round(median(aversion_durations), 3),
+        "mean_eye_contact_before_aversion_ms": round(mean_or_none(eye_contact_before), 3) if eye_contact_before else None,
+        "median_eye_contact_before_aversion_ms": round(median_or_none(eye_contact_before), 3) if eye_contact_before else None,
+        "mean_aversion_duration_ms": round(mean_or_none(aversion_durations), 3) if aversion_durations else None,
+        "median_aversion_duration_ms": round(median_or_none(aversion_durations), 3) if aversion_durations else None,
         "total_aversion_duration_ms": round(sum(aversion_durations), 3),
         "return_to_eyes_count": return_to_eyes_count,
         "return_to_eyes_rate": round(return_to_eyes_count / aversion_count, 6) if aversion_count > 0 else 0,
-        "mean_return_to_eyes_latency_ms": round(mean(return_latencies), 3),
+        "mean_return_to_eyes_latency_ms": round(mean_or_none(return_latencies), 3) if return_latencies else None,
         "face_aversion_count": sum(1 for item in aversions if item["first_aversion_state"] == "LOOKING_AT_FACE"),
         "away_aversion_count": sum(1 for item in aversions if item["first_aversion_state"] == "LOOKING_AWAY"),
         "aversion_after_mutual_gaze_count": sum(1 for item in aversions if item["aversion_after_mutual_gaze"]),
-        "mean_time_from_mutual_gaze_to_aversion_ms": round(mean(mutual_to_aversion), 3),
+        "mean_time_from_mutual_gaze_to_aversion_ms": round(mean_or_none(mutual_to_aversion), 3) if mutual_to_aversion else None,
         **mutual_area_metrics,
     }
 
