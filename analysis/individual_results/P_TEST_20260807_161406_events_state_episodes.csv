@@ -1,2 +1,0 @@
-participant_id,trial_id,condition,gaze_state,state_category,start_timestamp_ms,end_timestamp_ms,start_trial_time_ms,end_trial_time_ms,duration_ms,sample_count,in_mutual_gaze_area_sample_count,in_mutual_gaze_area_ratio
-P_TEST,0,GAZE_AWARE,INVALID,OTHER,1269,1269,0,0,0,1,0,0.0
