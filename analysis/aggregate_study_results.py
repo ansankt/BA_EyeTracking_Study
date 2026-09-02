@@ -11,6 +11,8 @@ import statistics
 from collections import defaultdict
 from pathlib import Path
 
+from scipy import stats
+
 
 INTERACTIONS = (
     "user_looks_at_avatar",
@@ -129,7 +131,7 @@ def sample_sd(values):
 
 def write_csv(path, rows, fieldnames):
     with open(path, "w", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer = csv.DictWriter(file, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 
@@ -564,15 +566,33 @@ def paired_permutation_test(differences, seed):
     return (extreme + 1) / (simulations + 1), "Monte-Carlo paired sign-permutation", simulations
 
 
-def holm_adjust(rows):
-    valid = [(index, row["p_value_raw"]) for index, row in enumerate(rows) if row["p_value_raw"] is not None]
+def paired_t_test(unaware_values, aware_values):
+    """Return SciPy's two-sided paired-sample t-test for the two conditions."""
+    participant_count = len(unaware_values)
+    degrees_of_freedom = participant_count - 1
+    differences = [aware - unaware for unaware, aware in zip(unaware_values, aware_values)]
+    difference_mean = mean(differences)
+    difference_sd = sample_sd(differences)
+    zero_tolerance = 1e-12 * max(1.0, abs(difference_mean))
+
+    if math.isclose(difference_sd, 0.0, rel_tol=0.0, abs_tol=zero_tolerance):
+        if math.isclose(difference_mean, 0.0, rel_tol=0.0, abs_tol=zero_tolerance):
+            return 0.0, degrees_of_freedom, 1.0
+        return math.copysign(math.inf, difference_mean), degrees_of_freedom, 0.0
+
+    result = stats.ttest_rel(aware_values, unaware_values, alternative="two-sided")
+    return float(result.statistic), degrees_of_freedom, float(result.pvalue)
+
+
+def holm_adjust(rows, raw_key, adjusted_key, significant_key):
+    valid = [(index, row[raw_key]) for index, row in enumerate(rows) if row[raw_key] is not None]
     valid.sort(key=lambda item: item[1])
     adjusted = 0
     total = len(valid)
     for rank, (index, raw_p) in enumerate(valid):
         adjusted = max(adjusted, min(1.0, raw_p * (total - rank)))
-        rows[index]["p_value_holm"] = round(adjusted, 6)
-        rows[index]["significant_holm_0_05"] = adjusted < 0.05
+        rows[index][adjusted_key] = round(adjusted, 6)
+        rows[index][significant_key] = adjusted < 0.05
 
 
 def build_paired_tests(rows, unaware_condition, aware_condition):
@@ -605,11 +625,17 @@ def build_paired_tests(rows, unaware_condition, aware_condition):
             "mean_difference_aware_minus_unaware": round(mean(differences), 6) if differences else None,
             "difference_standard_deviation": round(sample_sd(differences), 6) if len(differences) > 1 else None,
             "cohen_dz": None,
-            "test": None,
+            "permutation_test": None,
             "permutation_count": None,
-            "p_value_raw": None,
-            "p_value_holm": None,
-            "significant_holm_0_05": None,
+            "p_value_permutation_raw": None,
+            "p_value_permutation_holm": None,
+            "significant_permutation_holm_0_05": None,
+            "t_test": None,
+            "t_statistic": None,
+            "t_degrees_of_freedom": None,
+            "p_value_t_test_raw": None,
+            "p_value_t_test_holm": None,
+            "significant_t_test_holm_0_05": None,
             "note": "",
         }
 
@@ -621,14 +647,30 @@ def build_paired_tests(rows, unaware_condition, aware_condition):
             test_row["note"] = "At least two paired participants are required for a comparison."
         else:
             p_value, test_name, permutation_count = paired_permutation_test(differences, 20260810 + metric_index)
-            test_row["test"] = test_name
+            t_statistic, degrees_of_freedom, t_test_p_value = paired_t_test(unaware_values, aware_values)
+            test_row["permutation_test"] = test_name
             test_row["permutation_count"] = permutation_count
-            test_row["p_value_raw"] = round(p_value, 6)
+            test_row["p_value_permutation_raw"] = round(p_value, 6)
+            test_row["t_test"] = "two-sided paired-sample t-test"
+            test_row["t_statistic"] = round(t_statistic, 6) if math.isfinite(t_statistic) else str(t_statistic)
+            test_row["t_degrees_of_freedom"] = degrees_of_freedom
+            test_row["p_value_t_test_raw"] = round(t_test_p_value, 6)
             if len(differences) < 5:
                 test_row["note"] = "Fewer than five paired participants: interpret this result as exploratory."
         tests.append(test_row)
 
-    holm_adjust(tests)
+    holm_adjust(
+        tests,
+        "p_value_permutation_raw",
+        "p_value_permutation_holm",
+        "significant_permutation_holm_0_05",
+    )
+    holm_adjust(
+        tests,
+        "p_value_t_test_raw",
+        "p_value_t_test_holm",
+        "significant_t_test_holm_0_05",
+    )
     return tests
 
 
@@ -674,7 +716,9 @@ def main():
         "metric", "metric_label", "unit", "comparison", "paired_participant_count",
         "unaware_mean", "unaware_standard_deviation", "aware_mean", "aware_standard_deviation",
         "mean_difference_aware_minus_unaware", "difference_standard_deviation", "cohen_dz",
-        "test", "permutation_count", "p_value_raw", "p_value_holm", "significant_holm_0_05", "note",
+        "permutation_test", "permutation_count", "p_value_permutation_raw", "p_value_permutation_holm",
+        "significant_permutation_holm_0_05", "t_test", "t_statistic", "t_degrees_of_freedom",
+        "p_value_t_test_raw", "p_value_t_test_holm", "significant_t_test_holm_0_05", "note",
     ]
 
     participant_path = out_dir / "participant_condition_metrics.csv"
