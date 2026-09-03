@@ -23,14 +23,14 @@ INTERACTIONS = (
 METRICS = (
     ("user_looks_at_avatar_proportion_time", "User looks at avatar: proportion of time", "proportion"),
     ("user_looks_at_avatar_mean_episode_duration_ms", "User looks at avatar: mean episode duration", "ms"),
-    ("user_looks_at_avatar_episode_rate_per_minute", "User looks at avatar: episode rate", "episodes/min"),
+    ("user_looks_at_avatar_episode_rate_per_second", "User looks at avatar: episode rate", "episodes/s"),
     ("avatar_looks_at_user_proportion_time", "Avatar looks at user: proportion of time", "proportion"),
     ("avatar_looks_at_user_mean_episode_duration_ms", "Avatar looks at user: mean episode duration", "ms"),
-    ("avatar_looks_at_user_episode_rate_per_minute", "Avatar looks at user: episode rate", "episodes/min"),
+    ("avatar_looks_at_user_episode_rate_per_second", "Avatar looks at user: episode rate", "episodes/s"),
     ("mutual_gaze_proportion_time", "Mutual gaze: proportion of time", "proportion"),
     ("mutual_gaze_mean_episode_duration_ms", "Mutual gaze: mean episode duration", "ms"),
-    ("mutual_gaze_episode_rate_per_minute", "Mutual gaze: episode rate", "episodes/min"),
-    ("gaze_aversion_rate_per_minute", "Gaze aversion: rate", "aversions/min"),
+    ("mutual_gaze_episode_rate_per_second", "Mutual gaze: episode rate", "episodes/s"),
+    ("gaze_aversion_rate_per_second", "Gaze aversion: rate", "aversions/s"),
     ("mean_aversion_duration_ms", "Gaze aversion: mean duration", "ms"),
 )
 
@@ -62,11 +62,11 @@ FIGURES = (
     {
         "filename": "interaction_episode_rate.svg",
         "title": "Interaction States: Episode Rate",
-        "y_label": "Episodes per Minute",
+        "y_label": "Episodes per Second",
         "metrics": (
-            "user_looks_at_avatar_episode_rate_per_minute",
-            "avatar_looks_at_user_episode_rate_per_minute",
-            "mutual_gaze_episode_rate_per_minute",
+            "user_looks_at_avatar_episode_rate_per_second",
+            "avatar_looks_at_user_episode_rate_per_second",
+            "mutual_gaze_episode_rate_per_second",
         ),
         "labels": ("User Looks at\nAvatar", "Avatar Looks at\nUser", "Mutual Gaze"),
         "proportion_axis": False,
@@ -74,8 +74,8 @@ FIGURES = (
     {
         "filename": "gaze_aversion_rate.svg",
         "title": "Gaze Aversion: Rate",
-        "y_label": "Aversions per Minute",
-        "metrics": ("gaze_aversion_rate_per_minute",),
+        "y_label": "Aversions per Second",
+        "metrics": ("gaze_aversion_rate_per_second",),
         "labels": ("Gaze Aversion",),
         "proportion_axis": False,
     },
@@ -93,8 +93,8 @@ BOXPLOTS = (
     {
         "filename": "gaze_aversion_rate_boxplot.svg",
         "title": "Gaze Aversion Rate",
-        "y_label": "Aversions per Minute",
-        "metric": "gaze_aversion_rate_per_minute",
+        "y_label": "Aversions per Second",
+        "metric": "gaze_aversion_rate_per_second",
     },
     {
         "filename": "gaze_aversion_mean_duration_boxplot.svg",
@@ -183,8 +183,38 @@ def summary_index(summaries):
     }
 
 
-def write_grouped_bar_chart(path, figure, summaries, unaware_condition, aware_condition):
+def test_index(tests):
+    return {row["metric"]: row for row in tests}
+
+
+def raw_t_test_stars(test_row):
+    if not test_row:
+        return ""
+
+    p_value = to_float(test_row.get("p_value_t_test_raw"))
+    if p_value is None:
+        return ""
+    if p_value < 0.001:
+        return "***"
+    if p_value < 0.01:
+        return "**"
+    if p_value < 0.05:
+        return "*"
+    return ""
+
+
+def significance_bracket(svg, left_x, right_x, y, stars):
+    if not stars:
+        return
+
+    bracket_bottom = y + 7
+    svg.append(f'<path class="significance" d="M {left_x:.1f} {bracket_bottom:.1f} V {y:.1f} H {right_x:.1f} V {bracket_bottom:.1f}"/>')
+    svg.append(f'<text class="significance-label" x="{(left_x + right_x) / 2:.1f}" y="{y - 5:.1f}" text-anchor="middle">{stars}</text>')
+
+
+def write_grouped_bar_chart(path, figure, summaries, tests, unaware_condition, aware_condition):
     lookup = summary_index(summaries)
+    tests_by_metric = test_index(tests)
     conditions = (unaware_condition, aware_condition)
     values = []
     bars = []
@@ -220,7 +250,7 @@ def write_grouped_bar_chart(path, figure, summaries, unaware_condition, aware_co
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
         f'<title id="title">{html.escape(figure["title"])}</title>',
         '<desc id="desc">Grouped bar chart with means and standard deviations for the Gaze-Unaware and Gaze-Aware models.</desc>',
-        '<style>.title{font:600 24px Arial,Helvetica,sans-serif;fill:#1b1b1b}.axis{font:14px Arial,Helvetica,sans-serif;fill:#1b1b1b}.label{font:15px Arial,Helvetica,sans-serif;fill:#1b1b1b}.small{font:13px Arial,Helvetica,sans-serif;fill:#1b1b1b}.grid{stroke:#d5d9dc;stroke-width:1}.frame{fill:none;stroke:#767d82;stroke-width:1}.error{stroke:#202124;stroke-width:1.5}</style>',
+        '<style>.title{font:600 24px Arial,Helvetica,sans-serif;fill:#1b1b1b}.axis{font:14px Arial,Helvetica,sans-serif;fill:#1b1b1b}.label{font:15px Arial,Helvetica,sans-serif;fill:#1b1b1b}.small{font:13px Arial,Helvetica,sans-serif;fill:#1b1b1b}.grid{stroke:#d5d9dc;stroke-width:1}.frame{fill:none;stroke:#767d82;stroke-width:1}.error{stroke:#202124;stroke-width:1.5}.significance{fill:none;stroke:#202124;stroke-width:1.5}.significance-label{font:600 17px Arial,Helvetica,sans-serif;fill:#202124}</style>',
         '<rect width="100%" height="100%" fill="white"/>',
         f'<text class="title" x="{width / 2:.1f}" y="48" text-anchor="middle">{html.escape(figure["title"])}</text>',
     ]
@@ -253,6 +283,8 @@ def write_grouped_bar_chart(path, figure, summaries, unaware_condition, aware_co
                 svg.append(f'<line class="error" x1="{x - 7:.1f}" y1="{upper_y:.1f}" x2="{x + 7:.1f}" y2="{upper_y:.1f}"/>')
                 svg.append(f'<line class="error" x1="{x - 7:.1f}" y1="{lower_y:.1f}" x2="{x + 7:.1f}" y2="{lower_y:.1f}"/>')
 
+        stars = raw_t_test_stars(tests_by_metric.get(metric))
+        significance_bracket(svg, group_center - bar_width - 5, group_center + bar_width + 5, top - 10, stars)
         svg.append(svg_text_lines(label.split("\n"), group_center, bottom + 33, 18))
 
     legend_x = width / 2 - 155
@@ -260,13 +292,14 @@ def write_grouped_bar_chart(path, figure, summaries, unaware_condition, aware_co
         x = legend_x + index * 230
         svg.append(f'<rect x="{x:.1f}" y="535" width="18" height="18" fill="{MODEL_COLORS[index]}"/>')
         svg.append(f'<text class="label" x="{x + 26:.1f}" y="550">{html.escape(condition_label(condition, aware_condition, unaware_condition))}</text>')
-    svg.append(f'<text class="small" x="{width / 2:.1f}" y="586" text-anchor="middle">Bars: mean; error bars: standard deviation</text>')
+    svg.append(f'<text class="small" x="{width / 2:.1f}" y="576" text-anchor="middle">Bars: mean; error bars: standard deviation</text>')
+    svg.append(f'<text class="small" x="{width / 2:.1f}" y="596" text-anchor="middle">Raw paired t-test: * p &lt; .05, ** p &lt; .01, *** p &lt; .001</text>')
     svg.append("</svg>")
     path.write_text("\n".join(svg), encoding="utf-8")
     return True
 
 
-def write_figures(out_dir, summaries, unaware_condition, aware_condition):
+def write_figures(out_dir, summaries, tests, unaware_condition, aware_condition):
     figures_dir = out_dir / "figures"
     figures_dir.mkdir(parents=True, exist_ok=True)
     written_paths = []
@@ -274,7 +307,7 @@ def write_figures(out_dir, summaries, unaware_condition, aware_condition):
 
     for figure in FIGURES:
         path = figures_dir / figure["filename"]
-        if write_grouped_bar_chart(path, figure, summaries, unaware_condition, aware_condition):
+        if write_grouped_bar_chart(path, figure, summaries, tests, unaware_condition, aware_condition):
             written_paths.append(path)
         else:
             skipped.append(figure["filename"])
@@ -322,7 +355,7 @@ def boxplot_statistics(values):
     }
 
 
-def write_boxplot(path, figure, participant_rows, unaware_condition, aware_condition):
+def write_boxplot(path, figure, participant_rows, tests, unaware_condition, aware_condition):
     conditions = (unaware_condition, aware_condition)
     values_by_condition = {}
 
@@ -356,7 +389,7 @@ def write_boxplot(path, figure, participant_rows, unaware_condition, aware_condi
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
         f'<title id="title">{html.escape(figure["title"])}</title>',
         '<desc id="desc">Boxplot comparing individual participant values for the Gaze-Unaware and Gaze-Aware models.</desc>',
-        '<style>.title{font:600 24px Arial,Helvetica,sans-serif;fill:#1b1b1b}.axis{font:14px Arial,Helvetica,sans-serif;fill:#1b1b1b}.label{font:15px Arial,Helvetica,sans-serif;fill:#1b1b1b}.small{font:13px Arial,Helvetica,sans-serif;fill:#1b1b1b}.grid{stroke:#d5d9dc;stroke-width:1}.frame{fill:none;stroke:#767d82;stroke-width:1}.box{stroke:#202124;stroke-width:1.5}.median{stroke:#202124;stroke-width:2.5}.whisker{stroke:#202124;stroke-width:1.5}.point{fill:#202124;fill-opacity:0.55}</style>',
+        '<style>.title{font:600 24px Arial,Helvetica,sans-serif;fill:#1b1b1b}.axis{font:14px Arial,Helvetica,sans-serif;fill:#1b1b1b}.label{font:15px Arial,Helvetica,sans-serif;fill:#1b1b1b}.small{font:13px Arial,Helvetica,sans-serif;fill:#1b1b1b}.grid{stroke:#d5d9dc;stroke-width:1}.frame{fill:none;stroke:#767d82;stroke-width:1}.box{stroke:#202124;stroke-width:1.5}.median{stroke:#202124;stroke-width:2.5}.whisker{stroke:#202124;stroke-width:1.5}.point{fill:#202124;fill-opacity:0.55}.significance{fill:none;stroke:#202124;stroke-width:1.5}.significance-label{font:600 17px Arial,Helvetica,sans-serif;fill:#202124}</style>',
         '<rect width="100%" height="100%" fill="white"/>',
         f'<text class="title" x="{width / 2:.1f}" y="48" text-anchor="middle">{html.escape(figure["title"])}</text>',
     ]
@@ -391,13 +424,16 @@ def write_boxplot(path, figure, participant_rows, unaware_condition, aware_condi
         svg.append(f'<text class="label" x="{center_x:.1f}" y="{bottom + 34:.1f}" text-anchor="middle">{html.escape(condition_label(condition, aware_condition, unaware_condition))}</text>')
         svg.append(f'<text class="small" x="{center_x:.1f}" y="{bottom + 57:.1f}" text-anchor="middle">n = {len(values_by_condition[condition])}</text>')
 
-    svg.append(f'<text class="small" x="{width / 2:.1f}" y="586" text-anchor="middle">Box: interquartile range; line: median; whiskers: 1.5 IQR; dots: individual participants</text>')
+    stars = raw_t_test_stars(test_index(tests).get(figure["metric"]))
+    significance_bracket(svg, centers[0] - box_width / 2, centers[1] + box_width / 2, top - 10, stars)
+    svg.append(f'<text class="small" x="{width / 2:.1f}" y="576" text-anchor="middle">Box: interquartile range; line: median; whiskers: 1.5 IQR; dots: individual participants</text>')
+    svg.append(f'<text class="small" x="{width / 2:.1f}" y="596" text-anchor="middle">Raw paired t-test: * p &lt; .05, ** p &lt; .01, *** p &lt; .001</text>')
     svg.append("</svg>")
     path.write_text("\n".join(svg), encoding="utf-8")
     return True
 
 
-def write_boxplots(out_dir, participant_rows, unaware_condition, aware_condition):
+def write_boxplots(out_dir, participant_rows, tests, unaware_condition, aware_condition):
     figures_dir = out_dir / "figures"
     figures_dir.mkdir(parents=True, exist_ok=True)
     written_paths = []
@@ -405,7 +441,7 @@ def write_boxplots(out_dir, participant_rows, unaware_condition, aware_condition
 
     for figure in BOXPLOTS:
         path = figures_dir / figure["filename"]
-        if write_boxplot(path, figure, participant_rows, unaware_condition, aware_condition):
+        if write_boxplot(path, figure, participant_rows, tests, unaware_condition, aware_condition):
             written_paths.append(path)
         else:
             skipped.append(figure["filename"])
@@ -483,7 +519,7 @@ def aggregate_participant_condition_rows(trial_rows):
             if any(value is None for value in counts) or any(value is None for value in durations):
                 result[f"{interaction}_proportion_time"] = None
                 result[f"{interaction}_mean_episode_duration_ms"] = None
-                result[f"{interaction}_episode_rate_per_minute"] = None
+                result[f"{interaction}_episode_rate_per_second"] = None
                 result[count_key] = None
                 result[duration_key] = None
                 continue
@@ -496,8 +532,8 @@ def aggregate_participant_condition_rows(trial_rows):
             result[f"{interaction}_mean_episode_duration_ms"] = round(
                 total_episode_duration_ms / episode_count, 3,
             ) if episode_count > 0 else 0
-            result[f"{interaction}_episode_rate_per_minute"] = round(
-                episode_count / (total_trial_duration_ms / 60000), 6,
+            result[f"{interaction}_episode_rate_per_second"] = round(
+                episode_count / (total_trial_duration_ms / 1000), 6,
             ) if total_trial_duration_ms > 0 else None
             result[count_key] = int(episode_count)
             result[duration_key] = round(total_episode_duration_ms, 3)
@@ -511,8 +547,8 @@ def aggregate_participant_condition_rows(trial_rows):
         )
         has_aversion_data = any("gaze_aversion_count" in row for row in rows)
         result["gaze_aversion_count"] = int(aversion_count) if has_aversion_data else None
-        result["gaze_aversion_rate_per_minute"] = round(
-            aversion_count / (total_trial_duration_ms / 60000), 6,
+        result["gaze_aversion_rate_per_second"] = round(
+            aversion_count / (total_trial_duration_ms / 1000), 6,
         ) if has_aversion_data and total_trial_duration_ms > 0 else None
         result["mean_aversion_duration_ms"] = round(
             aversion_duration / aversion_count, 3,
@@ -721,12 +757,12 @@ def main():
         participant_fields.extend([
             f"{interaction}_proportion_time",
             f"{interaction}_mean_episode_duration_ms",
-            f"{interaction}_episode_rate_per_minute",
+            f"{interaction}_episode_rate_per_second",
             f"{interaction}_episode_count",
             f"{interaction}_total_episode_duration_ms",
         ])
     participant_fields.extend([
-        "gaze_aversion_count", "gaze_aversion_rate_per_minute",
+        "gaze_aversion_count", "gaze_aversion_rate_per_second",
         "mean_aversion_duration_ms", "total_aversion_duration_ms",
     ])
 
@@ -756,12 +792,14 @@ def main():
     figure_paths, skipped_figures = write_figures(
         out_dir,
         summaries,
+        tests,
         args.unaware_condition,
         args.aware_condition,
     )
     boxplot_paths, skipped_boxplots = write_boxplots(
         out_dir,
         participant_rows,
+        tests,
         args.unaware_condition,
         args.aware_condition,
     )

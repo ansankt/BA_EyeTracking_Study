@@ -235,7 +235,7 @@ def analyze_trial(participant_id, trial_id, condition, trial_rows, state_episode
     ]
 
     aversion_count = len(aversions)
-    trial_duration_min = trial_duration_ms / 60000 if trial_duration_ms > 0 else 0
+    trial_duration_seconds = trial_duration_ms / 1000 if trial_duration_ms > 0 else 0
     return_to_eyes_count = sum(1 for item in aversions if item["returned_to_eyes"])
     mutual_area_metrics = analyze_mutual_gaze_area(trial_rows, trial_duration_ms)
 
@@ -245,7 +245,7 @@ def analyze_trial(participant_id, trial_id, condition, trial_rows, state_episode
         "condition": condition,
         "trial_duration_ms": round(trial_duration_ms, 3),
         "gaze_aversion_count": aversion_count,
-        "gaze_aversion_rate_per_minute": round(aversion_count / trial_duration_min, 6) if trial_duration_min > 0 else 0,
+        "gaze_aversion_rate_per_second": round(aversion_count / trial_duration_seconds, 6) if trial_duration_seconds > 0 else 0,
         "mean_eye_contact_before_aversion_ms": round(mean_or_none(eye_contact_before), 3) if eye_contact_before else None,
         "median_eye_contact_before_aversion_ms": round(median_or_none(eye_contact_before), 3) if eye_contact_before else None,
         "mean_aversion_duration_ms": round(mean_or_none(aversion_durations), 3) if aversion_durations else None,
@@ -311,7 +311,7 @@ def close_boolean_episode(episode):
 def interaction_metrics(interaction_name, episodes, duration_ms):
     episode_count = len(episodes)
     total_episode_duration_ms = sum(episode["duration_ms"] for episode in episodes)
-    trial_duration_min = duration_ms / 60000 if duration_ms > 0 else 0
+    trial_duration_seconds = duration_ms / 1000 if duration_ms > 0 else 0
 
     return {
         f"{interaction_name}_proportion_time": round(
@@ -320,9 +320,9 @@ def interaction_metrics(interaction_name, episodes, duration_ms):
         f"{interaction_name}_mean_episode_duration_ms": round(
             mean([episode["duration_ms"] for episode in episodes]), 3,
         ),
-        f"{interaction_name}_episode_rate_per_minute": round(
-            episode_count / trial_duration_min, 6,
-        ) if trial_duration_min > 0 else 0,
+        f"{interaction_name}_episode_rate_per_second": round(
+            episode_count / trial_duration_seconds, 6,
+        ) if trial_duration_seconds > 0 else 0,
         f"{interaction_name}_episode_count": episode_count,
         f"{interaction_name}_total_episode_duration_ms": round(total_episode_duration_ms, 3),
     }
@@ -332,7 +332,7 @@ def empty_interaction_metrics(interaction_name):
     return {
         f"{interaction_name}_proportion_time": None,
         f"{interaction_name}_mean_episode_duration_ms": None,
-        f"{interaction_name}_episode_rate_per_minute": None,
+        f"{interaction_name}_episode_rate_per_second": None,
         f"{interaction_name}_episode_count": None,
         f"{interaction_name}_total_episode_duration_ms": None,
     }
@@ -500,7 +500,7 @@ def main():
         "condition",
         "trial_duration_ms",
         "gaze_aversion_count",
-        "gaze_aversion_rate_per_minute",
+        "gaze_aversion_rate_per_second",
         "mean_eye_contact_before_aversion_ms",
         "median_eye_contact_before_aversion_ms",
         "mean_aversion_duration_ms",
@@ -543,7 +543,7 @@ def main():
         interaction_metric_fields.extend([
             f"{interaction_name}_proportion_time",
             f"{interaction_name}_mean_episode_duration_ms",
-            f"{interaction_name}_episode_rate_per_minute",
+            f"{interaction_name}_episode_rate_per_second",
             f"{interaction_name}_episode_count",
             f"{interaction_name}_total_episode_duration_ms",
         ])

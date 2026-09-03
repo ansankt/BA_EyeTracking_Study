@@ -50,6 +50,10 @@ Für jede Metrik berechnet das Skript einen zweiseitigen gepaarten Permutationst
 
 Die Spalten `p_value_permutation_raw` und `p_value_permutation_holm` enthalten die unkorrierten beziehungsweise Holm-korrigierten p-Werte des Permutationstests. Die Spalten `p_value_t_test_raw` und `p_value_t_test_holm` enthalten die entsprechenden p-Werte des gepaarten t-Tests. `t_statistic` und `t_degrees_of_freedom` dokumentieren zusätzlich die Teststatistik und Freiheitsgrade des t-Tests.
 
-Bei null Blickaversionen werden aversionsbezogene Dauerkennwerte, beispielsweise `mean_aversion_duration_ms`, als fehlend gespeichert. Ein Wert von `0` bleibt ausschließlich für Kennwerte sinnvoll, bei denen null eine reale Beobachtung bedeutet, etwa `gaze_aversion_rate_per_minute` oder `total_aversion_duration_ms`. Dadurch beschreibt die mittlere Aversiondauer ausschließlich die Dauer tatsächlich beobachteter Aversionen.
+Bei null Blickaversionen werden aversionsbezogene Dauerkennwerte, beispielsweise `mean_aversion_duration_ms`, als fehlend gespeichert. Ein Wert von `0` bleibt ausschließlich für Kennwerte sinnvoll, bei denen null eine reale Beobachtung bedeutet, etwa `gaze_aversion_rate_per_second` oder `total_aversion_duration_ms`. Dadurch beschreibt die mittlere Aversiondauer ausschließlich die Dauer tatsächlich beobachteter Aversionen.
+
+Episoden- und Blickaversionraten werden als Ereignisse pro Sekunde gespeichert (`*_episode_rate_per_second`, `gaze_aversion_rate_per_second`).
 
 Die Diagramme sind skalierbare SVG-Dateien. Jeder Balken zeigt den Mittelwert eines Modells, jeder Fehlerbalken die Standardabweichung.
+
+Sternmarker in den Diagrammen beruhen auf den unkorrierten p-Werten des gepaarten t-Tests: `* p < .05`, `** p < .01`, `*** p < .001`. Sie dienen der schnellen visuellen Einordnung und ersetzen nicht die Holm-korrigierten p-Werte in `paired_condition_tests.csv`.
