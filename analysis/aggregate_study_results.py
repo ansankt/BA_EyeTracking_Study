@@ -44,7 +44,7 @@ FIGURES = (
             "avatar_looks_at_user_proportion_time",
             "mutual_gaze_proportion_time",
         ),
-        "labels": ("User Looks at\nAvatar", "Avatar Looks at\nUser", "Mutual Gaze"),
+        "labels": ("User Looks at\nEyes", "Eyes Look at\nUser", "Mutual Gaze"),
         "proportion_axis": True,
     },
     {
@@ -56,7 +56,7 @@ FIGURES = (
             "avatar_looks_at_user_mean_episode_duration_ms",
             "mutual_gaze_mean_episode_duration_ms",
         ),
-        "labels": ("User Looks at\nAvatar", "Avatar Looks at\nUser", "Mutual Gaze"),
+        "labels": ("User Looks at\nEyes", "Eyes Look at\nUser", "Mutual Gaze"),
         "proportion_axis": False,
     },
     {
@@ -68,7 +68,7 @@ FIGURES = (
             "avatar_looks_at_user_episode_rate_per_second",
             "mutual_gaze_episode_rate_per_second",
         ),
-        "labels": ("User Looks at\nAvatar", "Avatar Looks at\nUser", "Mutual Gaze"),
+        "labels": ("User Looks at\nEyes", "Eyes Look at\nUser", "Mutual Gaze"),
         "proportion_axis": False,
     },
     {
@@ -236,7 +236,7 @@ def write_grouped_bar_chart(path, figure, summaries, tests, unaware_condition, a
         y_max = nice_upper_bound(upper_value * 1.1)
 
     width = 1000
-    height = 620
+    height = 570
     left = 115
     right = 950
     top = 105
@@ -250,7 +250,7 @@ def write_grouped_bar_chart(path, figure, summaries, tests, unaware_condition, a
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
         f'<title id="title">{html.escape(figure["title"])}</title>',
         '<desc id="desc">Grouped bar chart with means and standard deviations for the Gaze-Unaware and Gaze-Aware models.</desc>',
-        '<style>.title{font:600 24px Arial,Helvetica,sans-serif;fill:#1b1b1b}.axis{font:14px Arial,Helvetica,sans-serif;fill:#1b1b1b}.label{font:15px Arial,Helvetica,sans-serif;fill:#1b1b1b}.small{font:13px Arial,Helvetica,sans-serif;fill:#1b1b1b}.grid{stroke:#d5d9dc;stroke-width:1}.frame{fill:none;stroke:#767d82;stroke-width:1}.error{stroke:#202124;stroke-width:1.5}.significance{fill:none;stroke:#202124;stroke-width:1.5}.significance-label{font:600 17px Arial,Helvetica,sans-serif;fill:#202124}</style>',
+        '<style>.title{font:600 28px Arial,Helvetica,sans-serif;fill:#1b1b1b}.axis{font:22px Arial,Helvetica,sans-serif;fill:#1b1b1b}.label{font:20px Arial,Helvetica,sans-serif;fill:#1b1b1b}.small{font:17px Arial,Helvetica,sans-serif;fill:#1b1b1b}.grid{stroke:#d5d9dc;stroke-width:1}.frame{fill:none;stroke:#767d82;stroke-width:1}.error{stroke:#202124;stroke-width:1.5}.significance{fill:none;stroke:#202124;stroke-width:1.5}.significance-label{font:600 21px Arial,Helvetica,sans-serif;fill:#202124}</style>',
         '<rect width="100%" height="100%" fill="white"/>',
         f'<text class="title" x="{width / 2:.1f}" y="48" text-anchor="middle">{html.escape(figure["title"])}</text>',
     ]
@@ -285,15 +285,13 @@ def write_grouped_bar_chart(path, figure, summaries, tests, unaware_condition, a
 
         stars = raw_t_test_stars(tests_by_metric.get(metric))
         significance_bracket(svg, group_center - bar_width - 5, group_center + bar_width + 5, top - 10, stars)
-        svg.append(svg_text_lines(label.split("\n"), group_center, bottom + 33, 18))
+        svg.append(svg_text_lines(label.split("\n"), group_center, bottom + 33, 22))
 
     legend_x = width / 2 - 155
     for index, condition in enumerate(conditions):
         x = legend_x + index * 230
         svg.append(f'<rect x="{x:.1f}" y="535" width="18" height="18" fill="{MODEL_COLORS[index]}"/>')
         svg.append(f'<text class="label" x="{x + 26:.1f}" y="550">{html.escape(condition_label(condition, aware_condition, unaware_condition))}</text>')
-    svg.append(f'<text class="small" x="{width / 2:.1f}" y="576" text-anchor="middle">Bars: mean; error bars: standard deviation</text>')
-    svg.append(f'<text class="small" x="{width / 2:.1f}" y="596" text-anchor="middle">Raw paired t-test: * p &lt; .05, ** p &lt; .01, *** p &lt; .001</text>')
     svg.append("</svg>")
     path.write_text("\n".join(svg), encoding="utf-8")
     return True
@@ -379,7 +377,7 @@ def write_boxplot(path, figure, participant_rows, tests, unaware_condition, awar
     )
     y_max = nice_upper_bound(maximum_value * 1.1)
 
-    width, height = 820, 620
+    width, height = 820, 570
     left, right, top, bottom = 115, 760, 105, 455
     plot_width = right - left
     plot_height = bottom - top
@@ -389,7 +387,7 @@ def write_boxplot(path, figure, participant_rows, tests, unaware_condition, awar
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
         f'<title id="title">{html.escape(figure["title"])}</title>',
         '<desc id="desc">Boxplot comparing individual participant values for the Gaze-Unaware and Gaze-Aware models.</desc>',
-        '<style>.title{font:600 24px Arial,Helvetica,sans-serif;fill:#1b1b1b}.axis{font:14px Arial,Helvetica,sans-serif;fill:#1b1b1b}.label{font:15px Arial,Helvetica,sans-serif;fill:#1b1b1b}.small{font:13px Arial,Helvetica,sans-serif;fill:#1b1b1b}.grid{stroke:#d5d9dc;stroke-width:1}.frame{fill:none;stroke:#767d82;stroke-width:1}.box{stroke:#202124;stroke-width:1.5}.median{stroke:#202124;stroke-width:2.5}.whisker{stroke:#202124;stroke-width:1.5}.point{fill:#202124;fill-opacity:0.55}.significance{fill:none;stroke:#202124;stroke-width:1.5}.significance-label{font:600 17px Arial,Helvetica,sans-serif;fill:#202124}</style>',
+        '<style>.title{font:600 28px Arial,Helvetica,sans-serif;fill:#1b1b1b}.axis{font:22px Arial,Helvetica,sans-serif;fill:#1b1b1b}.label{font:20px Arial,Helvetica,sans-serif;fill:#1b1b1b}.small{font:17px Arial,Helvetica,sans-serif;fill:#1b1b1b}.grid{stroke:#d5d9dc;stroke-width:1}.frame{fill:none;stroke:#767d82;stroke-width:1}.box{stroke:#202124;stroke-width:1.5}.median{stroke:#202124;stroke-width:2.5}.whisker{stroke:#202124;stroke-width:1.5}.point{fill:#202124;fill-opacity:0.55}.significance{fill:none;stroke:#202124;stroke-width:1.5}.significance-label{font:600 21px Arial,Helvetica,sans-serif;fill:#202124}</style>',
         '<rect width="100%" height="100%" fill="white"/>',
         f'<text class="title" x="{width / 2:.1f}" y="48" text-anchor="middle">{html.escape(figure["title"])}</text>',
     ]
@@ -426,8 +424,6 @@ def write_boxplot(path, figure, participant_rows, tests, unaware_condition, awar
 
     stars = raw_t_test_stars(test_index(tests).get(figure["metric"]))
     significance_bracket(svg, centers[0] - box_width / 2, centers[1] + box_width / 2, top - 10, stars)
-    svg.append(f'<text class="small" x="{width / 2:.1f}" y="576" text-anchor="middle">Box: interquartile range; line: median; whiskers: 1.5 IQR; dots: individual participants</text>')
-    svg.append(f'<text class="small" x="{width / 2:.1f}" y="596" text-anchor="middle">Raw paired t-test: * p &lt; .05, ** p &lt; .01, *** p &lt; .001</text>')
     svg.append("</svg>")
     path.write_text("\n".join(svg), encoding="utf-8")
     return True
