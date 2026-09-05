@@ -12,6 +12,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from scipy import stats
+import mutual_gaze_aversion
 
 
 INTERACTIONS = (
@@ -103,6 +104,18 @@ BOXPLOTS = (
         "metric": "mean_aversion_duration_ms",
     },
 )
+
+METRICS += mutual_gaze_aversion.METRICS
+for metric, title, y_label, filename in (
+    (mutual_gaze_aversion.METRICS[0][0], "Mutual-Gaze Aversion: Rate", "Aversions per Trial Second", "mutual_gaze_aversion_rate"),
+    (mutual_gaze_aversion.METRICS[1][0], "Mutual-Gaze Aversion: Exposure Rate", "Aversions per Mutual-Gaze Second", "mutual_gaze_aversion_exposure_rate"),
+    (mutual_gaze_aversion.METRICS[2][0], "Mutual-Gaze Aversion: Mean Duration", "Mean Completed Duration (ms)", "mutual_gaze_aversion_mean_duration"),
+):
+    FIGURES += ({"filename": filename + ".svg", "title": title,
+                 "y_label": y_label, "metrics": (metric,),
+                 "labels": ("Mutual-Gaze Aversion",), "proportion_axis": False},)
+    BOXPLOTS += ({"filename": filename + "_boxplot.svg", "title": title,
+                  "y_label": y_label, "metric": metric},)
 
 MODEL_COLORS = ("#4C78A8", "#E45756")
 
@@ -353,20 +366,43 @@ def boxplot_statistics(values):
     }
 
 
-def write_boxplot(path, figure, participant_rows, tests, unaware_condition, aware_condition):
+def complete_metric_pairs(rows, metric, unaware_condition, aware_condition):
+    """Select the same complete participant pairs for tests and boxplots."""
+    by_participant = defaultdict(dict)
+    for row in rows:
+        by_participant[row["participant_id"]][row["condition"]] = row
+    pairs = []
+    for participant_id, condition_rows in by_participant.items():
+        unaware = to_float(condition_rows.get(unaware_condition, {}).get(metric))
+        aware = to_float(condition_rows.get(aware_condition, {}).get(metric))
+        if unaware is not None and aware is not None:
+            pairs.append((participant_id, unaware, aware))
+    return pairs
+
+
+def write_boxplot(path, figure, participant_rows, tests, unaware_condition, aware_condition, paired_only=True, include_all_aware=False):
     conditions = (unaware_condition, aware_condition)
     values_by_condition = {}
 
-    for condition in conditions:
-        values = [
-            to_float(row.get(figure["metric"]))
-            for row in participant_rows
-            if row["condition"] == condition
-        ]
-        values = [value for value in values if value is not None]
+    pairs = complete_metric_pairs(participant_rows, figure["metric"], unaware_condition, aware_condition)
+    for index, condition in enumerate(conditions, start=1):
+        if paired_only:
+            values = [pair[index] for pair in pairs]
+        else:
+            values = [to_float(row.get(figure["metric"])) for row in participant_rows
+                      if row["condition"] == condition]
+            values = [value for value in values if value is not None]
         if not values:
             return False
         values_by_condition[condition] = values
+
+    if include_all_aware:
+        all_aware_key = "all_available_aware"
+        values_by_condition[all_aware_key] = [
+            value for row in participant_rows if row["condition"] == aware_condition
+            for value in [to_float(row.get(figure["metric"]))] if value is not None
+        ]
+        conditions = (*conditions, all_aware_key)
 
     statistics_by_condition = {
         condition: boxplot_statistics(values)
@@ -382,11 +418,18 @@ def write_boxplot(path, figure, participant_rows, tests, unaware_condition, awar
     plot_width = right - left
     plot_height = bottom - top
     centers = (left + plot_width * 0.3, left + plot_width * 0.7)
+    if include_all_aware:
+        width, right = 1100, 1040
+        plot_width = right - left
+        centers = tuple(left + plot_width * fraction for fraction in (0.18, 0.50, 0.82))
     box_width = 130
     svg = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">',
         f'<title id="title">{html.escape(figure["title"])}</title>',
-        '<desc id="desc">Boxplot comparing individual participant values for the Gaze-Unaware and Gaze-Aware models.</desc>',
+        ('<desc id="desc">The first two boxes show complete participant pairs used in the paired test. The third shows all available gaze-aware durations descriptively, including the paired participants. Significance brackets apply only to the first two boxes.</desc>' if include_all_aware else
+         '<desc id="desc">Boxplot comparing the same complete participant pairs used in the paired test. For aversion duration, participants must have at least one aversion in both conditions.</desc>'
+         if paired_only else
+         '<desc id="desc">Descriptive boxplot of all available duration values from the full sample of 18 participants. Undefined durations without aversions are omitted separately per condition. No paired-test significance is displayed.</desc>'),
         '<style>.title{font:600 28px Arial,Helvetica,sans-serif;fill:#1b1b1b}.axis{font:22px Arial,Helvetica,sans-serif;fill:#1b1b1b}.label{font:20px Arial,Helvetica,sans-serif;fill:#1b1b1b}.small{font:17px Arial,Helvetica,sans-serif;fill:#1b1b1b}.grid{stroke:#d5d9dc;stroke-width:1}.frame{fill:none;stroke:#767d82;stroke-width:1}.box{stroke:#202124;stroke-width:1.5}.median{stroke:#202124;stroke-width:2.5}.whisker{stroke:#202124;stroke-width:1.5}.point{fill:#202124;fill-opacity:0.55}.significance{fill:none;stroke:#202124;stroke-width:1.5}.significance-label{font:600 21px Arial,Helvetica,sans-serif;fill:#202124}</style>',
         '<rect width="100%" height="100%" fill="white"/>',
         f'<text class="title" x="{width / 2:.1f}" y="48" text-anchor="middle">{html.escape(figure["title"])}</text>',
@@ -412,17 +455,21 @@ def write_boxplot(path, figure, participant_rows, tests, unaware_condition, awar
         svg.append(f'<line class="whisker" x1="{center_x:.1f}" y1="{q1_y:.1f}" x2="{center_x:.1f}" y2="{lower_y:.1f}"/>')
         svg.append(f'<line class="whisker" x1="{center_x - 24:.1f}" y1="{upper_y:.1f}" x2="{center_x + 24:.1f}" y2="{upper_y:.1f}"/>')
         svg.append(f'<line class="whisker" x1="{center_x - 24:.1f}" y1="{lower_y:.1f}" x2="{center_x + 24:.1f}" y2="{lower_y:.1f}"/>')
-        svg.append(f'<rect class="box" x="{center_x - box_width / 2:.1f}" y="{q3_y:.1f}" width="{box_width}" height="{q1_y - q3_y:.1f}" fill="{MODEL_COLORS[index]}" fill-opacity="0.55"/>')
+        svg.append(f'<rect class="box" x="{center_x - box_width / 2:.1f}" y="{q3_y:.1f}" width="{box_width}" height="{q1_y - q3_y:.1f}" fill="{MODEL_COLORS[min(index, 1)]}" fill-opacity="0.55"/>')
         svg.append(f'<line class="median" x1="{center_x - box_width / 2:.1f}" y1="{median_y:.1f}" x2="{center_x + box_width / 2:.1f}" y2="{median_y:.1f}"/>')
 
         for value_index, value in enumerate(values_by_condition[condition]):
             jitter = ((value_index % 5) - 2) * 9
             svg.append(f'<circle class="point" cx="{center_x + jitter:.1f}" cy="{scale_y(value):.1f}" r="4.5"/>')
 
-        svg.append(f'<text class="label" x="{center_x:.1f}" y="{bottom + 34:.1f}" text-anchor="middle">{html.escape(condition_label(condition, aware_condition, unaware_condition))}</text>')
-        svg.append(f'<text class="small" x="{center_x:.1f}" y="{bottom + 57:.1f}" text-anchor="middle">n = {len(values_by_condition[condition])}</text>')
+        label = condition_label(condition, aware_condition, unaware_condition)
+        if include_all_aware:
+            label = "Baseline" if index == 0 else "Gaze-aware"
+        detail = (" (all available)" if index == 2 else " (paired)") if include_all_aware else ""
+        svg.append(f'<text class="label" x="{center_x:.1f}" y="{bottom + 34:.1f}" text-anchor="middle">{html.escape(label)}</text>')
+        svg.append(f'<text class="small" x="{center_x:.1f}" y="{bottom + 57:.1f}" text-anchor="middle">n = {len(values_by_condition[condition])}{detail}</text>')
 
-    stars = raw_t_test_stars(test_index(tests).get(figure["metric"]))
+    stars = raw_t_test_stars(test_index(tests).get(figure["metric"])) if paired_only else ""
     significance_bracket(svg, centers[0] - box_width / 2, centers[1] + box_width / 2, top - 10, stars)
     svg.append("</svg>")
     path.write_text("\n".join(svg), encoding="utf-8")
@@ -437,10 +484,20 @@ def write_boxplots(out_dir, participant_rows, tests, unaware_condition, aware_co
 
     for figure in BOXPLOTS:
         path = figures_dir / figure["filename"]
-        if write_boxplot(path, figure, participant_rows, tests, unaware_condition, aware_condition):
+        if write_boxplot(path, figure, participant_rows, tests, unaware_condition, aware_condition,
+                         include_all_aware=figure["metric"] == "mean_aversion_duration_ms"):
             written_paths.append(path)
         else:
             skipped.append(figure["filename"])
+
+        if figure["metric"] == "mean_aversion_duration_ms":
+            all_figure = dict(figure, title="Gaze Aversion Duration: All Available Data")
+            all_path = figures_dir / "gaze_aversion_mean_duration_boxplot_all_available.svg"
+            if write_boxplot(all_path, all_figure, participant_rows, tests,
+                             unaware_condition, aware_condition, paired_only=False):
+                written_paths.append(all_path)
+            else:
+                skipped.append(all_path.name)
 
     return written_paths, skipped
 
@@ -550,6 +607,17 @@ def aggregate_participant_condition_rows(trial_rows):
             aversion_duration / aversion_count, 3,
         ) if has_aversion_data and aversion_count > 0 else None
         result["total_aversion_duration_ms"] = round(aversion_duration, 3) if has_aversion_data else None
+        mutual_totals = {
+            key: [to_float(row.get(key)) for row in rows]
+            for key in mutual_gaze_aversion.TOTAL_FIELDS
+        }
+        if any(value is None for values in mutual_totals.values() for value in values):
+            result.update(dict.fromkeys(mutual_gaze_aversion.FIELDS))
+        else:
+            result.update(mutual_gaze_aversion.summarize(
+                {key: sum(values) for key, values in mutual_totals.items()},
+                total_trial_duration_ms,
+            ))
         results.append(result)
 
     return results
@@ -648,18 +716,9 @@ def holm_adjust(rows, raw_key, adjusted_key, significant_key):
 
 
 def build_paired_tests(rows, unaware_condition, aware_condition):
-    by_participant = defaultdict(dict)
-    for row in rows:
-        by_participant[row["participant_id"]][row["condition"]] = row
-
     tests = []
     for metric_index, (metric, label, unit) in enumerate(METRICS):
-        pairs = []
-        for participant_id, condition_rows in by_participant.items():
-            unaware_value = to_float(condition_rows.get(unaware_condition, {}).get(metric))
-            aware_value = to_float(condition_rows.get(aware_condition, {}).get(metric))
-            if unaware_value is not None and aware_value is not None:
-                pairs.append((participant_id, unaware_value, aware_value))
+        pairs = complete_metric_pairs(rows, metric, unaware_condition, aware_condition)
 
         unaware_values = [pair[1] for pair in pairs]
         aware_values = [pair[2] for pair in pairs]
@@ -765,6 +824,7 @@ def main():
     summary_fields = [
         "condition", "metric", "metric_label", "unit", "participant_count", "mean", "standard_deviation",
     ]
+    participant_fields.extend(mutual_gaze_aversion.FIELDS)
     aversion_incidence_fields = [
         "condition", "participant_count", "participants_with_gaze_aversion", "proportion_with_gaze_aversion",
     ]

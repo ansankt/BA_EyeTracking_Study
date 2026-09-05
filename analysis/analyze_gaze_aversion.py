@@ -3,6 +3,7 @@ import argparse
 import csv
 import statistics
 from pathlib import Path
+import mutual_gaze_aversion
 
 
 EYE_CONTACT_STATES = {"LOOKING_AT_EYES", "MUTUAL_GAZE"}
@@ -455,6 +456,7 @@ def main():
     groups = grouped_by_trial(rows)
 
     all_state_episodes = []
+    all_mutual_aversion_episodes = []
     all_interaction_episodes = []
     metric_rows = []
     interaction_metric_rows = []
@@ -463,6 +465,9 @@ def main():
         state_episodes = build_state_episodes(trial_rows)
         all_state_episodes.extend(state_episodes)
         metric_rows.append(analyze_trial(participant_id, trial_id, condition, trial_rows, state_episodes))
+        mutual_metrics, mutual_episodes = mutual_gaze_aversion.analyze(trial_rows)
+        metric_rows[-1].update(mutual_metrics)
+        all_mutual_aversion_episodes.extend(mutual_episodes)
         interaction_row, interaction_episodes = analyze_interactions(
             participant_id,
             trial_id,
@@ -548,6 +553,10 @@ def main():
             f"{interaction_name}_total_episode_duration_ms",
         ])
 
+    metric_fields.extend(mutual_gaze_aversion.FIELDS)
+    mutual_episodes_path = out_dir / f"{base_name}_mutual_gaze_aversion_episodes.csv"
+    write_csv(mutual_episodes_path, all_mutual_aversion_episodes, mutual_gaze_aversion.EPISODE_FIELDS)
+    print(f"Wrote {mutual_episodes_path}")
     write_csv(episodes_path, all_state_episodes, episode_fields)
     write_csv(metrics_path, metric_rows, metric_fields)
     write_csv(interaction_episodes_path, all_interaction_episodes, interaction_episode_fields)

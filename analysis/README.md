@@ -1,5 +1,39 @@
 # Auswertung
 
+## Separate Mutual-Gaze-Aversion
+
+Die bisherige allgemeine Aversion bleibt unveraendert. Zusaetzlich werden nur
+direkte Uebergaenge vom geloggten `MUTUAL_GAZE` nach `LOOKING_AT_FACE` oder
+`LOOKING_AWAY` als Mutual-Gaze-Aversion gewertet. Ein zwischenzeitliches
+`LOOKING_AT_EYES` schliesst diese Zuordnung aus. Damit wird ein Ende des
+Mutual Gaze allein durch die gezeichneten Augen nicht als Nutzeraversion gezählt.
+Es wird der klassifizierte Blickzustand verwendet, nicht der Controller-Modus.
+
+- `mutual_gaze_aversion_rate_per_second`: Anzahl / gesamte beobachtete Trialzeit in Sekunden.
+- `mutual_gaze_aversion_rate_per_mutual_gaze_second`: Anzahl / beobachtete Zeit im gueltigen Zustand `MUTUAL_GAZE` in Sekunden. Ohne diese Exposition bleibt der Wert leer.
+- `mean_mutual_gaze_aversion_duration_ms`: Mittelwert ausschliesslich abgeschlossener Aversionen bis zur Rueckkehr nach `LOOKING_AT_EYES` oder `MUTUAL_GAZE`. Ohne abgeschlossene Episode bleibt der Wert leer.
+
+Wechsel zwischen Gesicht und ausserhalb bleiben Teil derselben Aversion.
+Trackingverlust, unbekannte Zustaende und Trialende beenden eine Episode als
+zensiert: Der beobachtete Beginn zaehlt fuer die Rate, die unvollstaendige Dauer
+geht nicht in den Mittelwert ein. Die neue Datei
+`*_mutual_gaze_aversion_episodes.csv` dokumentiert Endgrund, Abschlussstatus und
+beobachtete Dauer. Samples gelten bis zum folgenden Zeitstempel; es wird keine
+zusaetzliche Glaettung oder zeitliche Lueckenschwelle eingefuehrt.
+
+Bei mehreren Trials pro Person und Bedingung werden Anzahlen und Zeiten zuerst
+summiert, dann die Kennzahlen berechnet. Alte Ausgaben ohne neue Spalten liefern
+fehlende Werte statt scheinbarer Nullwerte und sollten erneut ausgewertet werden.
+Die Gesamtauswertung erstellt fuer jede der drei Kennzahlen ein separates
+Säulendiagramm (M und SD) und einen Boxplot mit vollstaendigen Personenpaaren.
+Die Saeulendiagramme verwenden alle jeweils verfuegbaren Personen pro Bedingung.
+Gepaarte Tests verwenden nur vollstaendige Paare der jeweiligen Kennzahl.
+Signifikanzsterne beziehen sich weiterhin auf den unkorrigierten gepaarten t-Test.
+Die zusaetzlich exportierte Holm-Korrektur umfasst jetzt alle 14 Metriken;
+dadurch koennen sich auch bisherige korrigierte p-Werte aendern.
+
+Regressionstests: `python3 -B -m unittest discover -s analysis -p 'test_mutual_gaze_aversion.py'`.
+
 Die Gesamtauswertung benötigt SciPy. Mit Anaconda kann die Abhängigkeit beispielsweise wie folgt installiert werden:
 
 ```bash
